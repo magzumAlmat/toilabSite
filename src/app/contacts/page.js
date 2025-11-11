@@ -54,10 +54,11 @@ export default function Contacts() {
               </div>
               <h3 className="text-xl md:text-2xl font-bold text-[#4A3F35] mb-3 md:mb-4">{t.phone}</h3>
               <a 
-                href="tel:+77071234567" 
+                href="tel:+77011220141" 
                 className="text-base md:text-lg text-[#8C7B6D] hover:text-[#4A3F35] transition-colors font-medium"
               >
-                +7 (707) 123-45-67
+
+                +7 (701) 122-01-41
               </a>
               <p className="text-sm text-[#6B5A4D] mt-4 opacity-70">{t.phoneHours}</p>
             </div>

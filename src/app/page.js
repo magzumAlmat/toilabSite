@@ -53,7 +53,7 @@ export default function Home() {
                   <span>Google Play</span>
                 </a>
                 <a 
-                  href="https://apps.apple.com" 
+                  href="https://apps.apple.com/kz/app/toilab/id6755107343" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="group bg-white border-2 border-[#4A3F35] text-[#4A3F35] px-8 md:px-10 py-4 md:py-5 rounded-full flex items-center justify-center gap-3 text-lg md:text-xl font-bold hover:bg-[#F5F0E9] transition-all duration-300 transform hover:scale-105"
@@ -218,7 +218,7 @@ export default function Home() {
               Google Play
             </a>
             <a 
-              href="https://apps.apple.com" 
+              href="https://apps.apple.com/kz/app/toilab/id6755107343" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="group bg-transparent border-2 border-[#F5F0E9] text-[#F5F0E9] px-10 md:px-14 py-5 md:py-7 rounded-full text-xl md:text-2xl font-black hover:bg-[#F5F0E9] hover:text-[#4A3F35] transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-3"

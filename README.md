@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+<h1 align="center">🖥️ Toilab — Company Website</h1>
 
-## Getting Started
+<p align="center">
+  <img src="https://img.shields.io/badge/status-active-success?style=flat-square"/>
+  <img src="https://img.shields.io/badge/type-frontend-61DAFB?style=flat-square"/>
+  <img src="https://img.shields.io/github/last-commit/magzumAlmat/toilabSite?style=flat-square"/>
+  <img src="https://img.shields.io/github/languages/top/magzumAlmat/toilabSite?style=flat-square"/>
+</p>
 
-First, run the development server:
+<p align="center"><i>Corporate website for Toilab company showcasing services, portfolio, and contact information.</i></p>
+
+---
+
+## 🛠️ Tech Stack
+
+![React](https://img.shields.io/badge/-React-informational?style=flat-square) ![JavaScript](https://img.shields.io/badge/-JavaScript-informational?style=flat-square) ![CSS3](https://img.shields.io/badge/-CSS3-informational?style=flat-square) ![React Router](https://img.shields.io/badge/-React_Router-informational?style=flat-square)
+
+## ✨ Features
+
+- ✅ Responsive landing page
+- ✅ Service showcase sections
+- ✅ Portfolio gallery
+- ✅ Contact form
+- ✅ Smooth animations
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ (or Python 3.8+ for Python projects)
+- npm or yarn
+
+
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Clone the repository
+git clone https://github.com/magzumAlmat/toilabSite.git
+
+# Navigate to the project
+cd toilabSite
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your configuration
+
+# Run the application
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 👤 Author
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+**Almat Magzum** — Full-Stack JavaScript Developer
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- GitHub: [@magzumAlmat](https://github.com/magzumAlmat)
+- Email: almat.magzum@gmail.com
+- Location: Almaty, Kazakhstan
 
-## Learn More
+## 📄 License
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is open source and available under the [MIT License](LICENSE).

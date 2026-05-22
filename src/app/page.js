@@ -8,10 +8,10 @@ import { LangContext } from '../app/layout';
 
 const Ornament = ({ className = "" }) => (
   <svg className={`w-full ${className}`} viewBox="0 0 1200 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M0,50 Q100,20 200,50 T400,50 T600,50 T800,50 T1000,50 T1200,50" 
-          stroke="#4A3F35" strokeWidth="6" fill="none" />
-    <path d="M0,50 Q100,80 200,50 T400,50 T600,50 T800,50 T1000,50 T1200,50" 
-          stroke="#4A3F35" strokeWidth="6" fill="none" />
+    <path d="M0,50 Q100,20 200,50 T400,50 T600,50 T800,50 T1000,50 T1200,50"
+      stroke="#4A3F35" strokeWidth="6" fill="none" />
+    <path d="M0,50 Q100,80 200,50 T400,50 T600,50 T800,50 T1000,50 T1200,50"
+      stroke="#4A3F35" strokeWidth="6" fill="none" />
   </svg>
 );
 
@@ -43,22 +43,22 @@ export default function Home() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 md:gap-6 mb-12">
-                <a 
-                  href="https://play.google.com/store/apps" 
-                  target="_blank" 
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.amagzum.myjsproject&pcampaignid=web_share"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="group bg-gradient-to-r from-[#4A3F35] to-[#3A3028] text-white px-8 md:px-10 py-4 md:py-5 rounded-full flex items-center justify-center gap-3 text-lg md:text-xl font-bold hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
                 >
-                  <Download size={24} className="group-hover:animate-bounce" /> 
+                  <Download size={24} className="group-hover:animate-bounce" />
                   <span>Google Play</span>
                 </a>
-                <a 
-                  href="https://apps.apple.com/kz/app/toilab/id6755107343" 
-                  target="_blank" 
+                <a
+                  href="https://apps.apple.com/kz/app/toilab/id6755107343"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="group bg-white border-2 border-[#4A3F35] text-[#4A3F35] px-8 md:px-10 py-4 md:py-5 rounded-full flex items-center justify-center gap-3 text-lg md:text-xl font-bold hover:bg-[#F5F0E9] transition-all duration-300 transform hover:scale-105"
                 >
-                  <Download size={24} className="group-hover:animate-bounce" /> 
+                  <Download size={24} className="group-hover:animate-bounce" />
                   <span>App Store</span>
                 </a>
               </div>
@@ -84,11 +84,11 @@ export default function Home() {
               <div className="relative w-full max-w-xs">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#8C7B6D]/20 to-[#4A3F35]/20 rounded-3xl blur-3xl"></div>
                 <div className="relative ">
-                  <Image 
-                    src="/images/logo2.png" 
-                    alt="Toilab App" 
-                    width={300} 
-                    height={600} 
+                  <Image
+                    src="/images/logo2.png"
+                    alt="Toilab App"
+                    width={300}
+                    height={600}
                     className="w-full h-auto"
                   />
                 </div>
@@ -98,7 +98,7 @@ export default function Home() {
 
           {/* Scroll Indicator */}
           <div className="flex justify-center mt-12 md:mt-16">
-            <button 
+            <button
               onClick={scrollToFeatures}
               className="animate-bounce p-3 hover:bg-[#F5F0E9] rounded-full transition-colors"
             >
@@ -118,21 +118,21 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {t.features.items.map((f, i) => (
-              <div 
+              <div
                 key={i}
                 onMouseEnter={() => setHoveredFeature(i)}
                 onMouseLeave={() => setHoveredFeature(null)}
                 className="group relative bg-gradient-to-br from-[#F5F0E9]/10 to-[#F5F0E9]/5 backdrop-blur-lg rounded-2xl md:rounded-3xl p-6 md:p-8 border border-[#F5F0E9]/20 hover:border-[#F5F0E9]/40 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-[#8C7B6D]/0 to-[#F5F0E9]/0 group-hover:from-[#8C7B6D]/10 group-hover:to-[#F5F0E9]/5 rounded-2xl md:rounded-3xl transition-all duration-300"></div>
-                
+
                 <div className="relative z-10">
                   <div className="mb-4 md:mb-6 w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#8C7B6D]/30 to-[#A89A8F]/20 rounded-2xl flex items-center justify-center group-hover:from-[#8C7B6D]/50 group-hover:to-[#A89A8F]/40 transition-all duration-300">
                     <div className="text-[#F5F0E9] group-hover:scale-110 transition-transform duration-300">
                       {f.icon}
                     </div>
                   </div>
-                  
+
                   <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 group-hover:text-white transition-colors">{f.title}</h3>
                   <p className="text-base md:text-lg opacity-85 group-hover:opacity-100 transition-opacity leading-relaxed">{f.desc}</p>
                 </div>
@@ -175,15 +175,15 @@ export default function Home() {
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 md:mb-8 text-[#4A3F35]">{t.screenshots.title}</h2>
           <p className="text-lg md:text-xl text-[#6B5A4D] mb-12 md:mb-16 max-w-2xl mx-auto">{t.screenshots.subtitle}</p>
-          
+
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-[#8C7B6D]/20 to-[#4A3F35]/20 rounded-3xl blur-3xl"></div>
             <div className="relative  rounded-3xl  overflow-hidden  inline-block">
-              <Image 
-              src="/images/app.png" 
-                alt="Toilab интерфейс" 
-                width={340} 
-                height={700} 
+              <Image
+                src="/images/app.png"
+                alt="Toilab интерфейс"
+                width={340}
+                height={700}
                 className="rounded-2xl"
               />
             </div>
@@ -196,31 +196,31 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 md:mb-8">{t.cta.title}</h2>
           <p className="text-xl md:text-2xl mb-12 md:mb-16 opacity-90 leading-relaxed whitespace-pre-line">{t.cta.subtitle}</p>
-          
+
           <div className="mb-12 md:mb-16">
-            <Image 
-              src="/images/logo3.png" 
-              alt="Toilab" 
-              width={500} 
-              height={250} 
+            <Image
+              src="/images/logo3.png"
+              alt="Toilab"
+              width={500}
+              height={250}
               className="mx-auto"
             />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-6 md:gap-8 justify-center">
-            <a 
-              href="https://play.google.com/store/apps" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href="https://play.google.com/store/apps/details?id=com.amagzum.myjsproject&pcampaignid=web_share"
+              target="_blank"
+              rel="noopener noreferrer"
               className="group bg-[#F5F0E9] text-[#4A3F35] px-10 md:px-14 py-5 md:py-7 rounded-full text-xl md:text-2xl font-black hover:bg-white transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl flex items-center justify-center gap-3"
             >
               <Download size={28} className="group-hover:animate-bounce" />
               Google Play
             </a>
-            <a 
-              href="https://apps.apple.com/kz/app/toilab/id6755107343" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href="https://apps.apple.com/kz/app/toilab/id6755107343"
+              target="_blank"
+              rel="noopener noreferrer"
               className="group bg-transparent border-2 border-[#F5F0E9] text-[#F5F0E9] px-10 md:px-14 py-5 md:py-7 rounded-full text-xl md:text-2xl font-black hover:bg-[#F5F0E9] hover:text-[#4A3F35] transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-3"
             >
               <Download size={28} className="group-hover:animate-bounce" />
@@ -237,21 +237,21 @@ export default function Home() {
 
 // Тексты главной
 const ru = {
-  hero: { 
-    title: ["Пусть","каждое мероприятие", "будет особенным!"],
+  hero: {
+    title: ["Пусть", "каждое мероприятие", "будет особенным!"],
     subtitle: "Toilab — всё для Вашего мероприятия в одном приложении: ресторан, фотограф, ведущий, фейерверк, рассрочка и многое другое.",
     stat1: "услуг и партнёров",
     stat2: "средняя оценка"
   },
-  features: { 
+  features: {
     title: "Что умеет Toilab?",
     subtitle: "Полный набор инструментов для организации идеальных мероприятий",
     items: [
-      
+
       { icon: <Star size={48} />, title: "Реальные отзывы", desc: "Только проверенные рейтинги от реальных клиентов" },
       { icon: <Calendar size={48} />, title: "Бронь за 2 минуты", desc: "Быстрое бронирование прямо в приложении" },
       { icon: <Wallet size={48} />, title: "Рассрочка", desc: "По статистике 60% клиентов выбирают удобную рассрочку" },
-      
+
       { icon: <Smartphone size={48} />, title: "Мероприятия в телефоне", desc: "Все заказы в одном приложении" }
     ]
   },
@@ -264,11 +264,11 @@ const ru = {
       { number: "✓", title: "Поддержка 24/7", desc: "Наша команда всегда готова помочь вам в организации мероприятий." }
     ]
   },
-  screenshots: { 
+  screenshots: {
     title: "Как выглядит приложение",
     subtitle: "Интуитивно понятный интерфейс для удобства использования"
   },
-  cta: { 
+  cta: {
     title: "Скачайте Toilab",
     subtitle: "Бронируйте, оплачивайте, берите в рассрочку(на стадии разработки).",
     footer: "Доступно на iOS и Android."
@@ -282,13 +282,13 @@ const ru = {
 
 
 const kz = {
-  hero: { 
+  hero: {
     title: ["Әрбір Той", "Ерекше", "Болсын!"],
     subtitle: "Toilab — тойға қажетті барлық нәрсе бір қолданбада; фотограф, жүргізуші, фейерверк, бөліп төлеу және тағы басқа.",
     stat1: "қызмет және серіктес",
     stat2: "орташа баға"
   },
-  features: { 
+  features: {
     title: "Toilab не істей алады?",
     subtitle: "Идеалды той ұйымдастыру үшін толық құрал жиынтығы",
     items: [
@@ -304,14 +304,14 @@ const kz = {
       { number: "✓", title: "Уақыт үнемдеу", desc: "Қызметтерді әртүрлі жерлерден іздеудің қажеті жоқ. Барлығы бір қолданбада." },
       { number: "✓", title: "Арзан бағалар", desc: "Toilab пайдаланушылары үшін арнайы ұсыныстар мен жеңілдіктер." },
       { number: "✓", title: "Қауіпсіздік", desc: "Расталған серіктестер және төлемдердің қорғалуы кепілденген." },
-       { number: "✓", title: "24/7 қолдау", desc: "Біздің команда той ұйымдастыруында сізге көмектеуге әрдайым дайын." }
+      { number: "✓", title: "24/7 қолдау", desc: "Біздің команда той ұйымдастыруында сізге көмектеуге әрдайым дайын." }
     ]
   },
-  screenshots: { 
+  screenshots: {
     title: "Қолданба қалай көрінеді",
     subtitle: "Ыңғайлы пайдалануға арналған интуитивті интерфейс"
   },
-  cta: { 
+  cta: {
     title: "Toilab жүктеп алыңыз",
     subtitle: "Брондаңыз, төлеңіз, бөліп төлеңіз (әзірленуде).",
     footer: "iOS және Android платформаларында қолжетімді."

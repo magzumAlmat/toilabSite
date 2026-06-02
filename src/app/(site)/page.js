@@ -4,7 +4,7 @@
 import { useContext, useState } from 'react';
 import Image from 'next/image';
 import { Download, ChevronDown, Search, Star, Calendar, Wallet, MessageCircle, Smartphone, ArrowRight, Zap, Heart, Users } from 'lucide-react';
-import { LangContext } from '../app/layout';
+import { LangContext } from './layout';
 
 const Ornament = ({ className = "" }) => (
   <svg className={`w-full ${className}`} viewBox="0 0 1200 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">

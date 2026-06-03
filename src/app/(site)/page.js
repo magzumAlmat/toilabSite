@@ -15,6 +15,44 @@ const Ornament = ({ className = "" }) => (
   </svg>
 );
 
+// Рамка смартфона со скриншотом внутри. Inline-стили — не зависит от Tailwind.
+const PhoneFrame = ({ src, alt }) => (
+  <div
+    style={{
+      width: "100%",
+      background: "linear-gradient(180deg,#2b2520,#15110d)",
+      borderRadius: 32,
+      padding: 8,
+      boxShadow: "0 24px 50px -18px rgba(58,48,40,0.55)",
+    }}
+  >
+    <div
+      style={{
+        position: "relative",
+        borderRadius: 26,
+        overflow: "hidden",
+        aspectRatio: "9 / 19.5",
+        background: "#F5F0E9",
+      }}
+    >
+      <Image src={src} alt={alt} fill sizes="240px" style={{ objectFit: "cover" }} />
+      <div
+        style={{
+          position: "absolute",
+          top: 8,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "32%",
+          height: 18,
+          background: "#000",
+          borderRadius: 999,
+          zIndex: 2,
+        }}
+      />
+    </div>
+  </div>
+);
+
 export default function Home() {
   const { lang } = useContext(LangContext);
   const t = lang === 'ru' ? ru : kz;
@@ -176,17 +214,15 @@ export default function Home() {
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 md:mb-8 text-[#4A3F35]">{t.screenshots.title}</h2>
           <p className="text-lg md:text-xl text-[#6B5A4D] mb-12 md:mb-16 max-w-2xl mx-auto">{t.screenshots.subtitle}</p>
 
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#8C7B6D]/20 to-[#4A3F35]/20 rounded-3xl blur-3xl"></div>
-            <div className="relative  rounded-3xl  overflow-hidden  inline-block">
-              <Image
-                src="/images/app.png"
-                alt="Toilab интерфейс"
-                width={340}
-                height={700}
-                className="rounded-2xl"
-              />
-            </div>
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "flex-start", gap: "28px" }}>
+            {t.screenshots.shots.map((s, i) => (
+              <figure key={i} style={{ margin: 0, width: 230 }}>
+                <PhoneFrame src={s.src} alt={s.label} />
+                <figcaption style={{ marginTop: 14, fontSize: 15, fontWeight: 600, color: "#6B5A4D" }}>
+                  {s.label}
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </div>
       </section>
@@ -197,14 +233,13 @@ export default function Home() {
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 md:mb-8">{t.cta.title}</h2>
           <p className="text-xl md:text-2xl mb-12 md:mb-16 opacity-90 leading-relaxed whitespace-pre-line">{t.cta.subtitle}</p>
 
-          <div className="mb-12 md:mb-16">
-            <Image
-              src="/images/logo3.png"
-              alt="Toilab"
-              width={500}
-              height={250}
-              className="mx-auto"
-            />
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", gap: "24px", flexWrap: "wrap", marginBottom: "3rem" }}>
+            <div style={{ width: 200 }}>
+              <PhoneFrame src="/images/screens/home.PNG" alt="Toilab — главный экран" />
+            </div>
+            <div style={{ width: 200, marginTop: "36px" }}>
+              <PhoneFrame src="/images/screens/services.PNG" alt="Toilab — подбор услуг" />
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-6 md:gap-8 justify-center">
@@ -266,7 +301,13 @@ const ru = {
   },
   screenshots: {
     title: "Как выглядит приложение",
-    subtitle: "Интуитивно понятный интерфейс для удобства использования"
+    subtitle: "Интуитивно понятный интерфейс для удобства использования",
+    shots: [
+      { src: "/images/screens/home.PNG", label: "Главный экран" },
+      { src: "/images/screens/catelog.PNG", label: "Каталог услуг" },
+      { src: "/images/screens/services.PNG", label: "Подбор услуг" },
+      { src: "/images/screens/event.PNG", label: "Создание мероприятия" }
+    ]
   },
   cta: {
     title: "Скачайте Toilab",
@@ -309,7 +350,13 @@ const kz = {
   },
   screenshots: {
     title: "Қолданба қалай көрінеді",
-    subtitle: "Ыңғайлы пайдалануға арналған интуитивті интерфейс"
+    subtitle: "Ыңғайлы пайдалануға арналған интуитивті интерфейс",
+    shots: [
+      { src: "/images/screens/home.PNG", label: "Басты экран" },
+      { src: "/images/screens/catelog.PNG", label: "Қызметтер каталогы" },
+      { src: "/images/screens/services.PNG", label: "Қызметтерді таңдау" },
+      { src: "/images/screens/event.PNG", label: "Іс-шара құру" }
+    ]
   },
   cta: {
     title: "Toilab жүктеп алыңыз",

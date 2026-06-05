@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Paper,
@@ -11,6 +11,7 @@ import {
   TableRow,
   TableCell,
   TableContainer,
+  TableSortLabel,
   Chip,
   Button,
   CircularProgress,
@@ -18,13 +19,15 @@ import {
   Stack,
   TextField,
   MenuItem,
+  InputAdornment,
   Snackbar,
   ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import SearchIcon from '@mui/icons-material/Search';
 import {
-  listPending,
+  fetchAllEntries,
   fetchCounts,
   approveEntry,
   rejectEntry,
@@ -40,12 +43,39 @@ const STATUSES = [
   { value: 'approved', label: 'Одобренные', subtitle: 'Одобренных записей', empty: 'Нет одобренных записей' },
 ];
 
+// Отображаемые значения записи (для колонок, поиска и сортировки).
+const entryName = (e) =>
+  e.data?.name || e.data?.brand || e.data?.item_name || `#${e.id}`;
+const entrySupplier = (e) => e.supplier?.fullName || e.supplier?.email || '';
+const entryCreated = (e) =>
+  e.createdAt || e.data?.created_at || e.data?.createdAt || null;
+
+// Единая строка для поиска по всем полям записи.
+function haystack(e) {
+  return [
+    resourceLabel(e.resourceType),
+    e.resourceType,
+    entryName(e),
+    e.supplier?.fullName,
+    e.supplier?.email,
+    `#${e.id}`,
+    e.id,
+    formatDate(entryCreated(e)),
+    JSON.stringify(e.data || {}),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
 export default function ModerationQueueView() {
-  const [items, setItems] = useState([]);
+  const [allItems, setAllItems] = useState([]);
   const [counts, setCounts] = useState({});
-  const [total, setTotal] = useState(0);
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('pending');
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('created'); // 'name' | 'supplier' | 'created'
+  const [sortDir, setSortDir] = useState('desc'); // 'asc' | 'desc'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -57,13 +87,14 @@ export default function ModerationQueueView() {
     setLoading(true);
     setError('');
     try {
-      const [queue, c] = await Promise.all([
-        listPending({ type: typeFilter, status: statusFilter }),
-        fetchCounts(statusFilter),
-      ]);
-      setItems(queue.items);
-      setTotal(queue.total);
+      const c = await fetchCounts(statusFilter);
       setCounts(c);
+      const items = await fetchAllEntries({
+        type: typeFilter,
+        status: statusFilter,
+        counts: c,
+      });
+      setAllItems(items);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -74,6 +105,32 @@ export default function ModerationQueueView() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(field);
+      setSortDir(field === 'created' ? 'desc' : 'asc');
+    }
+  };
+
+  // Поиск + сортировка — производные от загруженного списка (без запросов к API).
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let arr = q ? allItems.filter((e) => haystack(e).includes(q)) : allItems;
+    const dir = sortDir === 'asc' ? 1 : -1;
+    arr = [...arr].sort((a, b) => {
+      if (sortBy === 'created') {
+        const av = new Date(entryCreated(a) || 0).getTime() || 0;
+        const bv = new Date(entryCreated(b) || 0).getTime() || 0;
+        return dir * (av - bv);
+      }
+      const get = sortBy === 'supplier' ? entrySupplier : entryName;
+      return dir * String(get(a)).localeCompare(String(get(b)), 'ru', { sensitivity: 'base', numeric: true });
+    });
+    return arr;
+  }, [allItems, search, sortBy, sortDir]);
 
   const handleModerate = async (action, reason) => {
     if (!selected) return;
@@ -87,13 +144,12 @@ export default function ModerationQueueView() {
         setToast('Запись отклонена');
       }
       // Убираем обработанную запись из списка и обновляем счётчики.
-      setItems((prev) =>
+      setAllItems((prev) =>
         prev.filter(
           (e) =>
             !(e.id === selected.id && e.resourceType === selected.resourceType),
         ),
       );
-      setTotal((t) => Math.max(0, t - 1));
       setCounts((prev) => ({
         ...prev,
         [selected.resourceType]: Math.max(
@@ -106,7 +162,7 @@ export default function ModerationQueueView() {
     }
   };
 
-  const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);
+  const totalCount = Object.values(counts).reduce((a, b) => a + Number(b || 0), 0);
   const statusMeta = STATUSES.find((s) => s.value === statusFilter) || STATUSES[0];
 
   return (
@@ -123,6 +179,9 @@ export default function ModerationQueueView() {
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {statusMeta.subtitle}: {totalCount}
+            {(search || typeFilter !== 'all') && !loading
+              ? ` · показано: ${visible.length}`
+              : ''}
           </Typography>
         </Box>
         <Button
@@ -150,22 +209,44 @@ export default function ModerationQueueView() {
         ))}
       </ToggleButtonGroup>
 
-      <TextField
-        select
-        label="Тип записи"
-        value={typeFilter}
-        onChange={(e) => setTypeFilter(e.target.value)}
-        size="small"
-        sx={{ mb: 2, minWidth: 260 }}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={2}
+        sx={{ mb: 2 }}
+        alignItems={{ sm: 'center' }}
       >
-        <MenuItem value="all">Все типы ({totalCount})</MenuItem>
-        {RESOURCE_TYPES.map((r) => (
-          <MenuItem key={r.type} value={r.type}>
-            {r.icon} {r.label}
-            {counts[r.type] ? ` (${counts[r.type]})` : ''}
-          </MenuItem>
-        ))}
-      </TextField>
+        <TextField
+          select
+          label="Тип записи"
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          size="small"
+          sx={{ minWidth: 260 }}
+        >
+          <MenuItem value="all">Все типы ({totalCount})</MenuItem>
+          {RESOURCE_TYPES.map((r) => (
+            <MenuItem key={r.type} value={r.type}>
+              {r.icon} {r.label}
+              {counts[r.type] ? ` (${counts[r.type]})` : ''}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          placeholder="Поиск по всем полям…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          size="small"
+          sx={{ minWidth: 280, flexGrow: 1 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Stack>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -178,24 +259,50 @@ export default function ModerationQueueView() {
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress />
           </Box>
-        ) : items.length === 0 ? (
+        ) : visible.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
-            <Typography>{statusMeta.empty}</Typography>
+            <Typography>
+              {search ? 'Ничего не найдено' : statusMeta.empty}
+            </Typography>
           </Box>
         ) : (
           <TableContainer>
-            <Table>
+            <Table stickyHeader>
               <TableHead>
                 <TableRow>
                   <TableCell>Тип</TableCell>
-                  <TableCell>Название</TableCell>
-                  <TableCell>Поставщик</TableCell>
-                  <TableCell>Создано</TableCell>
+                  <TableCell sortDirection={sortBy === 'name' ? sortDir : false}>
+                    <TableSortLabel
+                      active={sortBy === 'name'}
+                      direction={sortBy === 'name' ? sortDir : 'asc'}
+                      onClick={() => handleSort('name')}
+                    >
+                      Название
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sortDirection={sortBy === 'supplier' ? sortDir : false}>
+                    <TableSortLabel
+                      active={sortBy === 'supplier'}
+                      direction={sortBy === 'supplier' ? sortDir : 'asc'}
+                      onClick={() => handleSort('supplier')}
+                    >
+                      Поставщик
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sortDirection={sortBy === 'created' ? sortDir : false}>
+                    <TableSortLabel
+                      active={sortBy === 'created'}
+                      direction={sortBy === 'created' ? sortDir : 'asc'}
+                      onClick={() => handleSort('created')}
+                    >
+                      Создано
+                    </TableSortLabel>
+                  </TableCell>
                   <TableCell align="right">Действие</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {items.map((entry) => (
+                {visible.map((entry) => (
                   <TableRow
                     key={`${entry.resourceType}-${entry.id}`}
                     hover
@@ -209,9 +316,7 @@ export default function ModerationQueueView() {
                         variant="outlined"
                       />
                     </TableCell>
-                    <TableCell>
-                      {entry.data?.name || entry.data?.brand || `#${entry.id}`}
-                    </TableCell>
+                    <TableCell>{entryName(entry)}</TableCell>
                     <TableCell>
                       <Typography variant="body2">
                         {entry.supplier?.fullName || '—'}
@@ -220,7 +325,7 @@ export default function ModerationQueueView() {
                         {entry.supplier?.email}
                       </Typography>
                     </TableCell>
-                    <TableCell>{formatDate(entry.createdAt)}</TableCell>
+                    <TableCell>{formatDate(entryCreated(entry))}</TableCell>
                     <TableCell align="right">
                       <Button
                         size="small"

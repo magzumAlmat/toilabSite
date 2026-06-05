@@ -26,6 +26,7 @@
 
 import client from './client';
 import { USE_MOCK } from '../config';
+import { fileSegment } from '../resources';
 import {
   mockListPending,
   mockCounts,
@@ -57,6 +58,52 @@ export async function fetchCounts(status = 'pending') {
   return data;
 }
 
+// Постранично собирает ВСЕ записи одного типа (или 'all') для статуса.
+async function fetchPaged({ type, status, cap = 5000 }) {
+  const pageSize = 100;
+  let page = 1;
+  let out = [];
+  let total = Infinity;
+  // Ограничиваем число итераций, чтобы не зациклиться на кривом ответе бэкенда.
+  for (let i = 0; i < 100; i += 1) {
+    const res = await listPending({ type, status, page, pageSize });
+    const items = Array.isArray(res?.items) ? res.items : [];
+    if (typeof res?.total === 'number') total = res.total;
+    out = out.concat(items);
+    if (items.length < pageSize || out.length >= total || out.length >= cap) break;
+    page += 1;
+  }
+  return out;
+}
+
+// Возвращает ВСЕ записи для статуса с учётом типа. Для type='all' тянет каждый
+// тип, у которого есть записи (по counts), и объединяет — иначе бэкенд на
+// `type=all` отдаёт только один тип (товары). Так в очереди видны все категории.
+export async function fetchAllEntries({ type = 'all', status = 'pending', counts = null } = {}) {
+  if (type && type !== 'all') {
+    return fetchPaged({ type, status });
+  }
+  let c = counts;
+  if (!c) {
+    try {
+      c = await fetchCounts(status);
+    } catch {
+      c = {};
+    }
+  }
+  const types = Object.entries(c || {})
+    .filter(([, n]) => Number(n) > 0)
+    .map(([t]) => t);
+  // Нет разбивки по типам — откатываемся на постраничный обход type=all.
+  if (types.length === 0) {
+    return fetchPaged({ type: 'all', status });
+  }
+  const chunks = await Promise.all(
+    types.map((t) => fetchPaged({ type: t, status })),
+  );
+  return chunks.flat();
+}
+
 export async function getEntry(resourceType, id) {
   if (USE_MOCK) {
     await delay();
@@ -64,6 +111,20 @@ export async function getEntry(resourceType, id) {
   }
   const { data } = await client.get(`/api/moderation/${resourceType}/${id}`);
   return data;
+}
+
+// Фото/видео записи: GET /api/{segment}/{id}/files → [{ path, mimetype, ... }].
+// Возвращаем нормализованный массив; при ошибке/моке — пустой список.
+export async function getEntryFiles(resourceType, id) {
+  if (USE_MOCK || !resourceType || id == null) return [];
+  try {
+    const { data } = await client.get(
+      `/api/${fileSegment(resourceType)}/${id}/files`,
+    );
+    return Array.isArray(data) ? data : data?.data || [];
+  } catch {
+    return [];
+  }
 }
 
 export async function approveEntry(resourceType, id) {

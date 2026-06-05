@@ -30,10 +30,22 @@ const ICON_BY_TYPE = Object.fromEntries(
   RESOURCE_TYPES.map((r) => [r.type, r.icon]),
 );
 
+// Сегмент пути для фото/видео записи: GET /api/{segment}/{id}/files.
+// Для большинства типов совпадает с resourceType, но у части бэкенд использует
+// другое имя (suvenir → suvenirs, traditional-gift → traditionalgift).
+const FILE_SEGMENT_BY_TYPE = {
+  suvenir: 'suvenirs',
+  'traditional-gift': 'traditionalgift',
+};
+
 export function resourceLabel(type) {
   return LABEL_BY_TYPE[type] || type;
 }
 
 export function resourceIcon(type) {
   return ICON_BY_TYPE[type] || '📄';
+}
+
+export function fileSegment(type) {
+  return FILE_SEGMENT_BY_TYPE[type] || type;
 }

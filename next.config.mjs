@@ -11,6 +11,16 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // Прокси для веб-версии приложения (/app): браузер ходит на same-origin
+  // /toilab-api/*, а Next сервер-сайд проксирует на api.toilab.kz — без CORS.
+  async rewrites() {
+    return [
+      {
+        source: '/toilab-api/:path*',
+        destination: 'https://api.toilab.kz/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

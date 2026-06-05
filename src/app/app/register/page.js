@@ -1,0 +1,102 @@
+'use client';
+
+// Регистрация (POST /api/register). Роль: Клиент=3 / Поставщик=2 — как в моб. app.
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useApp } from '../_lib/AppContext';
+import { register } from '../_lib/apiClient';
+
+export default function RegisterPage() {
+  const { t } = useApp();
+  const router = useRouter();
+  const [form, setForm] = useState({ email: '', password: '', phone: '', name: '', lastname: '' });
+  const [role, setRole] = useState('client'); // client | supplier
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState(false);
+
+  const upd = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      const roleId = role === 'supplier' ? 2 : 3;
+      await register({ ...form, email: form.email.trim().toLowerCase(), roleId });
+      setDone(true);
+    } catch (err) {
+      setError(err.message || t('Ошибка регистрации', 'Тіркелу қатесі'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <div style={{ maxWidth: 440, margin: '48px auto', textAlign: 'center' }}>
+        <h1 style={{ fontSize: 26, fontWeight: 800, marginBottom: 10 }}>{t('Почти готово', 'Дайын болды')}</h1>
+        <p style={{ color: '#6B5A4D', marginBottom: 24 }}>
+          {t('Аккаунт создан. Проверьте email для подтверждения, затем войдите.',
+             'Аккаунт жасалды. Растау үшін email тексеріп, кіріңіз.')}
+        </p>
+        <Link href="/app/login" style={{ display: 'inline-block', padding: '12px 24px', borderRadius: 999, background: '#4A3F35', color: '#F5F0E9', fontWeight: 700, textDecoration: 'none' }}>
+          {t('Войти', 'Кіру')}
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: 460, margin: '32px auto' }}>
+      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>{t('Регистрация', 'Тіркелу')}</h1>
+      <p style={{ color: '#6B5A4D', marginBottom: 22, fontSize: 15 }}>{t('Создайте аккаунт Toilab', 'Toilab аккаунтын жасаңыз')}</p>
+
+      {/* Выбор роли */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+        {[['client', t('Я клиент', 'Мен клиентпін')], ['supplier', t('Я поставщик', 'Мен жеткізушімін')]].map(([val, label]) => (
+          <button key={val} type="button" onClick={() => setRole(val)}
+            style={{
+              flex: 1, padding: '12px', borderRadius: 14, cursor: 'pointer', fontWeight: 700, fontSize: 14,
+              border: role === val ? '2px solid #B08D57' : '1px solid #D4C4B0',
+              background: role === val ? '#fff' : '#F5F0E9',
+              color: '#4A3F35',
+            }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Email" type="email" value={form.email} onChange={upd('email')} required />
+        <Field label={t('Пароль', 'Құпиясөз')} type="password" value={form.password} onChange={upd('password')} required />
+        <Field label={t('Телефон', 'Телефон')} type="tel" value={form.phone} onChange={upd('phone')} />
+        <div style={{ display: 'flex', gap: 12 }}>
+          <Field label={t('Имя', 'Аты')} value={form.name} onChange={upd('name')} />
+          <Field label={t('Фамилия', 'Тегі')} value={form.lastname} onChange={upd('lastname')} />
+        </div>
+
+        {error && <div style={{ color: '#A33', background: '#FCEBEB', padding: 10, borderRadius: 10, fontSize: 14 }}>{error}</div>}
+
+        <button type="submit" disabled={busy}
+          style={{ padding: '14px', borderRadius: 999, background: '#4A3F35', color: '#F5F0E9', fontWeight: 700, fontSize: 16, border: 'none', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1 }}>
+          {busy ? t('Регистрация…', 'Тіркелу…') : t('Зарегистрироваться', 'Тіркелу')}
+        </button>
+      </form>
+
+      <p style={{ marginTop: 16, color: '#6B5A4D', fontSize: 14 }}>
+        {t('Уже есть аккаунт?', 'Аккаунт бар ма?')} <Link href="/app/login" style={{ color: '#B08D57' }}>{t('Войти', 'Кіру')}</Link>
+      </p>
+    </div>
+  );
+}
+
+function Field({ label, ...rest }) {
+  return (
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+      <span style={{ fontSize: 13, fontWeight: 600, color: '#6B5A4D' }}>{label}</span>
+      <input {...rest} style={{ padding: '12px 14px', borderRadius: 12, border: '1px solid #D4C4B0', fontSize: 16, color: '#4A3F35', background: '#fff', width: '100%', boxSizing: 'border-box' }} />
+    </label>
+  );
+}

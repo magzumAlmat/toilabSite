@@ -54,6 +54,7 @@ const FIELD_LABELS = {
   email: ['Email', 'Email'],
   link: ['Сайт', 'Сілтеме'],
   website: ['Сайт', 'Сілтеме'],
+  goodLink: ['Ссылка', 'Сілтеме'],
   portfolio: ['Портфолио', 'Портфолио'],
   rating: ['Рейтинг', 'Рейтинг'],
   roomsCount: ['Кол-во номеров', 'Бөлмелер саны'],
@@ -114,7 +115,7 @@ export function getPrice(item) {
 }
 
 // Поля-ссылки + определение URL/email для кликабельности.
-const LINK_FIELDS = new Set(['link', 'website', 'portfolio', 'site', 'url', 'instagram', 'social']);
+const LINK_FIELDS = new Set(['link', 'website', 'portfolio', 'site', 'url', 'instagram', 'social', 'goodLink', 'goodlink']);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Возвращает href, если значение похоже на ссылку/почту, иначе null.
@@ -138,9 +139,17 @@ export function getSpecs(item, lang) {
     if (typeof v === 'boolean') value = v ? (L ? 'Иә' : 'Да') : (L ? 'Жоқ' : 'Нет');
     else if (typeof v === 'number' || typeof v === 'string') {
       if (MONEY_FIELDS.has(k) && Number(v) > 0) value = fmtMoney(v);
-      else { href = hrefFor(k, v); value = href ? String(v) : trVal(String(v), lang); }
+      else {
+        href = hrefFor(k, v);
+        if (href) {
+          // ссылка/почта: показываем компактно (домен / адрес почты), полный адрес — в href
+          value = href.startsWith('mailto:') ? href.slice(7) : (String(v).replace(/^https?:\/\//i, '').replace(/[/?#].*$/, '').slice(0, 60) || String(v));
+        } else {
+          value = trVal(String(v), lang);
+          if (String(value).length > 200) return; // длинные текстовые блобы пропускаем
+        }
+      }
     } else return;
-    if (String(value).length > 200) return;
     const label = FIELD_LABELS[k] ? FIELD_LABELS[k][L] : k;
     out.push([label, value, href]);
   };

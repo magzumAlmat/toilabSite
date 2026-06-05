@@ -87,7 +87,14 @@ export default function CartPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#8C7B6D', marginTop: 8 }}>
                     <span>{unit ? `${fmtMoney(unit)} ×` : t('Цена не указана', 'Бағасы көрсетілмеген')}</span>
                     {unit > 0 && (guestQty ? (
-                      <span><b>{qty}</b> {t('гостей', 'қонақ')}</span>
+                      <>
+                        <button onClick={() => setGuests(String(Math.max(1, (parseInt(guests, 10) || 1) - 1)))} style={stepBtn}>−</button>
+                        <input type="number" min={1} value={guests} placeholder="1"
+                          onChange={(e) => setGuests(e.target.value)}
+                          style={{ width: 56, padding: '6px 8px', borderRadius: 8, border: '1px solid #D4C4B0', fontSize: 14, color: '#4A3F35', textAlign: 'center' }} />
+                        <button onClick={() => setGuests(String((parseInt(guests, 10) || 1) + 1))} style={stepBtn}>+</button>
+                        <span>{t('гостей', 'қонақ')}</span>
+                      </>
                     ) : (
                       <>
                         <button onClick={() => setQty(c.slug, c.item.id, c.quantity - 1)} style={stepBtn}>−</button>

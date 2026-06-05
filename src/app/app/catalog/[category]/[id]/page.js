@@ -28,6 +28,7 @@ export default function ServiceDetail() {
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [lightboxIdx, setLightboxIdx] = useState(null);
 
   useEffect(() => {
     if (!cat) return;
@@ -98,9 +99,12 @@ export default function ServiceDetail() {
             {media.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: media.length === 1 ? '1fr' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 20 }}>
                 {media.map((m, i) => (
-                  m.video
-                    ? <video key={i} src={m.url} controls style={{ width: '100%', borderRadius: 14, border: '1px solid rgba(212,196,176,0.5)' }} />
-                    : <img key={i} src={m.url} alt={`${name} ${i + 1}`} loading="lazy" style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: 14, border: '1px solid rgba(212,196,176,0.5)' }} />
+                  <div key={i} onClick={() => setLightboxIdx(i)} style={{ position: 'relative', cursor: 'zoom-in', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(212,196,176,0.5)' }}>
+                    {m.video
+                      ? <><video src={m.url} style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
+                          <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>▶</span></>
+                      : <img src={m.url} alt={`${name} ${i + 1}`} loading="lazy" style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', display: 'block' }} />}
+                  </div>
                 ))}
               </div>
             )}
@@ -122,6 +126,33 @@ export default function ServiceDetail() {
           </div>
         );
       })()}
+
+      {/* Лайтбокс: увеличенное фото/видео */}
+      {lightboxIdx != null && media[lightboxIdx] && (
+        <div onClick={() => setLightboxIdx(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button type="button" onClick={() => setLightboxIdx(null)}
+            style={{ position: 'absolute', top: 16, right: 20, border: 'none', background: 'none', color: '#fff', fontSize: 34, lineHeight: 1, cursor: 'pointer', zIndex: 2 }}>×</button>
+          {media.length > 1 && (
+            <>
+              <button type="button" onClick={(e) => { e.stopPropagation(); setLightboxIdx((i) => (i - 1 + media.length) % media.length); }} style={navBtn('left')}>‹</button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); setLightboxIdx((i) => (i + 1) % media.length); }} style={navBtn('right')}>›</button>
+            </>
+          )}
+          <div onClick={(e) => e.stopPropagation()} style={{ maxWidth: '92vw', maxHeight: '88vh', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+            {media[lightboxIdx].video
+              ? <video src={media[lightboxIdx].url} controls autoPlay style={{ maxWidth: '92vw', maxHeight: '82vh', borderRadius: 8 }} />
+              : <img src={media[lightboxIdx].url} alt="" style={{ maxWidth: '92vw', maxHeight: '82vh', objectFit: 'contain', borderRadius: 8 }} />}
+            {media.length > 1 && <div style={{ color: '#fff', fontSize: 13, opacity: 0.8 }}>{lightboxIdx + 1} / {media.length}</div>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const navBtn = (side) => ({
+  position: 'absolute', [side]: 8, top: '50%', transform: 'translateY(-50%)',
+  width: 48, height: 48, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.15)',
+  color: '#fff', fontSize: 30, lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2,
+});

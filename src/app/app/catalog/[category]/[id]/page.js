@@ -20,7 +20,7 @@ function unwrap(res) {
 
 export default function ServiceDetail() {
   const { category, id } = useParams();
-  const { lang, t } = useApp();
+  const { lang, t, ready, isAuth } = useApp();
   const { has, toggle } = useCart();
   const cat = CATEGORY_BY_SLUG[category];
 
@@ -31,6 +31,7 @@ export default function ServiceDetail() {
 
   useEffect(() => {
     if (!cat) return;
+    if (!isAuth) { setLoading(false); return; } // карточка требует входа (бэкенд)
     let active = true;
     setLoading(true);
     setError('');
@@ -50,7 +51,7 @@ export default function ServiceDetail() {
         .catch(() => {});
     }
     return () => { active = false; };
-  }, [cat, id]);
+  }, [cat, id, isAuth]);
 
   if (!cat) return <p style={{ color: '#6B5A4D' }}>{t('Категория не найдена', 'Санат табылмады')}.</p>;
 
@@ -59,6 +60,14 @@ export default function ServiceDetail() {
   return (
     <div style={{ maxWidth: 760, margin: '0 auto' }}>
       <Link href={backHref} style={{ color: '#6B5A4D', textDecoration: 'none', fontSize: 14 }}>← {lang === 'kz' ? cat.kz : cat.ru}</Link>
+
+      {ready && !isAuth && (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#6B5A4D' }}>
+          <div style={{ fontSize: 40, marginBottom: 10 }}>🔒</div>
+          <p style={{ marginBottom: 16 }}>{t('Войдите, чтобы открыть карточку услуги', 'Қызмет картасын ашу үшін кіріңіз')}</p>
+          <Link href="/app/login" style={{ color: '#B08D57', fontWeight: 700 }}>{t('Войти', 'Кіру')}</Link>
+        </div>
+      )}
 
       {loading && <p style={{ color: '#6B5A4D', marginTop: 16 }}>{t('Загрузка…', 'Жүктелуде…')}</p>}
       {error && !loading && (

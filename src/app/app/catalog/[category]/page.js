@@ -48,7 +48,7 @@ function CardImage({ segment, id, icon, alt }) {
 
 export default function CategoryList() {
   const { category } = useParams();
-  const { city, lang, t } = useApp();
+  const { city, lang, t, ready, isAuth } = useApp();
   const { has, toggle } = useCart();
   const cat = CATEGORY_BY_SLUG[category];
 
@@ -58,6 +58,7 @@ export default function CategoryList() {
 
   useEffect(() => {
     if (!cat) return;
+    if (!isAuth) { setItems([]); setLoading(false); return; } // каталог требует входа (бэкенд)
     let active = true;
     setLoading(true);
     setError('');
@@ -66,7 +67,7 @@ export default function CategoryList() {
       .catch((e) => active && setError(e.message))
       .finally(() => active && setLoading(false));
     return () => { active = false; };
-  }, [cat, city]);
+  }, [cat, city, isAuth]);
 
   if (!cat) {
     return <p style={{ color: '#6B5A4D' }}>{t('Категория не найдена', 'Санат табылмады')}.</p>;
@@ -83,6 +84,17 @@ export default function CategoryList() {
       </h1>
       <p style={{ color: '#6B5A4D', marginBottom: 20, fontSize: 14 }}>{t('Город', 'Қала')}: {city || '—'}</p>
 
+      {ready && !isAuth && (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#6B5A4D' }}>
+          <div style={{ fontSize: 40, marginBottom: 10 }}>🔒</div>
+          <p style={{ marginBottom: 16 }}>{t('Войдите, чтобы просматривать услуги', 'Қызметтерді көру үшін кіріңіз')}</p>
+          <Link href="/app/login" style={{ color: '#B08D57', fontWeight: 700 }}>{t('Войти', 'Кіру')}</Link>
+          <span style={{ margin: '0 8px', color: '#D4C4B0' }}>·</span>
+          <Link href="/app/register" style={{ color: '#B08D57', fontWeight: 700 }}>{t('Регистрация', 'Тіркелу')}</Link>
+        </div>
+      )}
+
+      {isAuth && (<>
       {loading && <p style={{ color: '#6B5A4D' }}>{t('Загрузка…', 'Жүктелуде…')}</p>}
       {error && !loading && (
         <p style={{ color: '#A33', background: '#FCEBEB', padding: 12, borderRadius: 12 }}>
@@ -125,6 +137,7 @@ export default function CategoryList() {
           );
         })}
       </div>
+      </>)}
     </div>
   );
 }

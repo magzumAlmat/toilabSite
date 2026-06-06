@@ -18,6 +18,12 @@ import { getSpecs, FILE_SEGMENT, fileUrl } from '../../_lib/catalogFields';
 const fileSegmentFor = (catKey) => (catKey === 'transport' ? 'transport-vehicle' : FILE_SEGMENT[catKey]);
 
 const asArray = (res) => (Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : []);
+// Часть эндпоинтов не фильтрует по городу — фильтруем на клиенте.
+const filterCity = (arr, city) => {
+  const sel = (city || '').trim().toLowerCase();
+  if (!sel) return arr;
+  return arr.filter((it) => { const c = String(it.city || it.transport?.city || '').trim().toLowerCase(); return !c || c === sel; });
+};
 const todayISO = () => new Date().toISOString().split('T')[0];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -80,13 +86,13 @@ export default function NewEvent() {
     setLoadingCat(catKey);
     try {
       const res = await fetchList(EVENT_CATEGORIES[catKey].list);
-      setCache((c) => ({ ...c, [catKey]: asArray(res) }));
+      setCache((c) => ({ ...c, [catKey]: filterCity(asArray(res), city) }));
     } catch {
       setCache((c) => ({ ...c, [catKey]: [] }));
     } finally {
       setLoadingCat(null);
     }
-  }, [openCat, cache]);
+  }, [openCat, cache, city]);
 
   const toggle = (catKey, item) => {
     setManual(true);
@@ -116,14 +122,14 @@ export default function NewEvent() {
     const map = { ...cacheRef.current };
     await Promise.all(cats.map(async (c) => {
       if (map[c]) return;
-      try { map[c] = asArray(await fetchList(EVENT_CATEGORIES[c].list)); } catch { map[c] = []; }
+      try { map[c] = filterCity(asArray(await fetchList(EVENT_CATEGORIES[c].list)), city); } catch { map[c] = []; }
     }));
     setCache(map);
     const sel = recommendSelection({ categories: cats, budget, guestCount: guests, catalogByCat: map });
     setSelected(sel);
     const { totalCost: tc } = buildItemsAndTotals(sel, guests);
     setAutoNote((parseFloat(budget) || 0) >= tc ? 'ok' : 'over');
-  }, [budget, guests, typeKey]);
+  }, [budget, guests, typeKey, city]);
 
   // Автозапуск: ввели бюджет и гостей → лоадер → подбор → результат (если не правили вручную).
   useEffect(() => {

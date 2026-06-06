@@ -63,7 +63,14 @@ export default function CategoryList() {
     setLoading(true);
     setError('');
     fetchList(cat.list)
-      .then((res) => active && setItems(toArray(res)))
+      .then((res) => {
+        if (!active) return;
+        // Часть эндпоинтов бэкенда не фильтрует по городу — фильтруем на клиенте.
+        const all = toArray(res);
+        const sel = (city || '').trim().toLowerCase();
+        const cityOf = (it) => String(it.city || it.transport?.city || '').trim().toLowerCase();
+        setItems(sel ? all.filter((it) => { const c = cityOf(it); return !c || c === sel; }) : all);
+      })
       .catch((e) => active && setError(e.message))
       .finally(() => active && setLoading(false));
     return () => { active = false; };

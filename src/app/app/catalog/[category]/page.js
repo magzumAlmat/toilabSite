@@ -95,7 +95,7 @@ export default function CategoryList() {
         <div style={{ textAlign: 'center', padding: '40px 0', color: '#6B5A4D' }}>
           <div style={{ fontSize: 40, marginBottom: 10 }}>🔒</div>
           <p style={{ marginBottom: 16 }}>{t('Войдите, чтобы просматривать услуги', 'Қызметтерді көру үшін кіріңіз')}</p>
-          <Link href="/app/login" style={{ color: '#B08D57', fontWeight: 700 }}>{t('Войти', 'Кіру')}</Link>
+          <Link href={`/app/login?redirect=/app/catalog/${category}`} style={{ color: '#B08D57', fontWeight: 700 }}>{t('Войти', 'Кіру')}</Link>
           <span style={{ margin: '0 8px', color: '#D4C4B0' }}>·</span>
           <Link href="/app/register" style={{ color: '#B08D57', fontWeight: 700 }}>{t('Регистрация', 'Тіркелу')}</Link>
         </div>

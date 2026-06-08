@@ -1,15 +1,28 @@
 'use client';
 
 // Вход в веб-версию (POST /api/auth/login, как в мобильном app).
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '../_lib/AppContext';
 import { login } from '../_lib/apiClient';
 
+// useSearchParams требует Suspense-границы на уровне страницы.
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const { signIn, t } = useApp();
   const router = useRouter();
+  const params = useSearchParams();
+  // Возврат после входа — только внутренние /app-пути (защита от open-redirect).
+  const redirectParam = params.get('redirect');
+  const redirectTo = redirectParam && redirectParam.startsWith('/app') ? redirectParam : '/app';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -24,7 +37,7 @@ export default function LoginPage() {
       const token = data?.token || data?.accessToken || data?.access_token;
       if (!token) throw new Error(t('Не получен токен', 'Токен алынбады'));
       await signIn(token, data?.user);
-      router.push('/app');
+      router.push(redirectTo);
     } catch (err) {
       setError(err.message || t('Ошибка входа', 'Кіру қатесі'));
     } finally {

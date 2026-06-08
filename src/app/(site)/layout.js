@@ -65,11 +65,12 @@ export default function SiteLayout({ children }) {
                 {t.nav.contacts}
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#8C7B6D] transition-all duration-300 group-hover:w-full"></span>
               </Link>
-              <Link href="/privacy" className="text-base font-medium text-[#4A3F35] hover:text-[#8C7B6D] transition-colors duration-200 relative group">
-                {t.nav.privacy}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#8C7B6D] transition-all duration-300 group-hover:w-full"></span>
-              </Link>
             </nav>
+
+            {/* CTA: переход в веб-приложение */}
+            <Link href="/app" className="hidden md:inline-flex items-center px-5 py-2.5 rounded-full bg-gradient-to-r from-[#4A3F35] to-[#3A3028] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all">
+              {t.nav.openApp}
+            </Link>
 
             {/* Language Switcher */}
             <div className="hidden md:flex items-center gap-2 bg-gradient-to-r from-[#F5F0E9] to-[#E8DED3] rounded-full p-1.5 border border-[#D4C4B0]/30">
@@ -123,11 +124,11 @@ export default function SiteLayout({ children }) {
                   {t.nav.contacts}
                 </Link>
                 <Link
-                  href="/privacy"
-                  className="block text-base font-medium text-[#4A3F35] hover:text-[#8C7B6D] transition-colors py-2"
+                  href="/app"
+                  className="block text-center px-4 py-2.5 rounded-full bg-gradient-to-r from-[#4A3F35] to-[#3A3028] text-white text-sm font-bold shadow-md"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  {t.nav.privacy}
+                  {t.nav.openApp}
                 </Link>
                 <div className="flex gap-2 pt-3 border-t border-[#D4C4B0]/20">
                   <button
@@ -183,6 +184,7 @@ export default function SiteLayout({ children }) {
               <div>
                 <h3 className="text-lg font-bold mb-4">{t.footer.links}</h3>
                 <ul className="space-y-2 text-sm">
+                  <li><Link href="/app" className="opacity-80 hover:opacity-100 transition">{t.nav.openApp}</Link></li>
                   <li><Link href="/about" className="opacity-80 hover:opacity-100 transition">{t.nav.about}</Link></li>
                   <li><Link href="/contacts" className="opacity-80 hover:opacity-100 transition">{t.nav.contacts}</Link></li>
                   <li><Link href="/privacy" className="opacity-80 hover:opacity-100 transition">{t.nav.privacy}</Link></li>
@@ -209,7 +211,8 @@ const ru = {
     home: "Главная",
     about: "О нас",
     contacts: "Контакты",
-    privacy: "Политика конфиденциальности"
+    privacy: "Политика конфиденциальности",
+    openApp: "Открыть приложение"
   },
   footer: {
     about: "О нас",
@@ -226,7 +229,8 @@ const kz = {
     home: "Басты бет",
     about: "Біз туралы",
     contacts: "Байланыс",
-    privacy: "Құпиялылық саясаты"
+    privacy: "Құпиялылық саясаты",
+    openApp: "Қолданбаны ашу"
   },
   footer: {
     about: "Біз туралы",

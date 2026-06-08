@@ -13,9 +13,10 @@ export default function AppShell({ children }) {
   return (
     <AppProvider>
       <CartProvider>
-        <div style={{ minHeight: '100vh', background: '#F5F0E9', color: '#4A3F35', fontFamily: 'var(--font-roboto), sans-serif' }}>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#F5F0E9', color: '#4A3F35', fontFamily: 'var(--font-roboto), sans-serif' }}>
           <AppHeader />
-          <main style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px 64px' }}>{children}</main>
+          <main style={{ flex: 1, width: '100%', maxWidth: 1100, margin: '0 auto', padding: '24px 16px 64px' }}>{children}</main>
+          <AppFooter />
         </div>
       </CartProvider>
     </AppProvider>
@@ -35,12 +36,18 @@ function AppHeader() {
     isAuth && user?.roleId === 2 && { href: '/app/supplier', label: isKz ? 'Кабинет' : 'Кабинет', active: pathname.startsWith('/app/supplier') },
   ].filter(Boolean);
 
-  // Информационные страницы лендинга (раздел (site)) — всегда справа.
+  // Информационные страницы лендинга (раздел (site)) — справа. Политика
+  // конфиденциальности живёт в футере (юр-ссылка), не в основном меню.
   const infoItems = [
     { href: '/about', label: isKz ? 'Біз туралы' : 'О нас' },
     { href: '/contacts', label: isKz ? 'Байланыс' : 'Контакты' },
-    { href: '/privacy', label: isKz ? 'Құпиялылық саясаты' : 'Политика конфиденциальности' },
   ];
+
+  // После входа возвращаем пользователя на текущую страницу приложения.
+  const loginHref =
+    pathname.startsWith('/app') && !pathname.startsWith('/app/login') && !pathname.startsWith('/app/register')
+      ? `/app/login?redirect=${encodeURIComponent(pathname)}`
+      : '/app/login';
 
   return (
     <header style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(212,196,176,0.5)' }}>
@@ -96,7 +103,7 @@ function AppHeader() {
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Link href="/app/register" style={btnGhost}>{isKz ? 'Тіркелу' : 'Регистрация'}</Link>
-            <Link href="/app/login" style={btnDark}>{isKz ? 'Кіру' : 'Войти'}</Link>
+            <Link href={loginHref} style={btnDark}>{isKz ? 'Кіру' : 'Войти'}</Link>
           </div>
         )}
       </div>
@@ -129,6 +136,30 @@ function NavTab({ href, label, active, muted }) {
     >
       {label}
     </Link>
+  );
+}
+
+// Слим-футер приложения: юр-ссылки (включая Политику) + копирайт.
+function AppFooter() {
+  const { lang } = useApp();
+  const isKz = lang === 'kz';
+  const links = [
+    { href: '/about', label: isKz ? 'Біз туралы' : 'О нас' },
+    { href: '/contacts', label: isKz ? 'Байланыс' : 'Контакты' },
+    { href: '/privacy', label: isKz ? 'Құпиялылық саясаты' : 'Политика конфиденциальности' },
+  ];
+  return (
+    <footer style={{ borderTop: '1px solid rgba(212,196,176,0.5)', background: 'rgba(255,255,255,0.6)' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '18px 16px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 20px' }}>
+        {links.map((l) => (
+          <Link key={l.href} href={l.href} style={{ color: '#6B5A4D', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>
+            {l.label}
+          </Link>
+        ))}
+        <div style={{ flex: 1, minWidth: 12 }} />
+        <span style={{ color: '#8C7B6D', fontSize: 13 }}>© 2026 Toilab</span>
+      </div>
+    </footer>
   );
 }
 

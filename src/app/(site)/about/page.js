@@ -5,6 +5,7 @@ import { useContext, useState } from 'react';
 import Image from 'next/image';
 import { Download, ChevronDown, Search, Star, Calendar, Wallet, MessageCircle, Smartphone, ArrowRight, Zap, Heart, Users } from 'lucide-react';
 import { LangContext } from '../layout';
+import { FadeIn, StaggerGrid, StaggerItem } from '../../_ui/motion';
 
 const Ornament = ({ className = "" }) => (
   <svg className={`w-full ${className}`} viewBox="0 0 1200 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -69,7 +70,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
             {/* Left Content */}
-            <div className="order-2 md:order-1">
+            <FadeIn className="order-2 md:order-1">
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-black mb-6 md:mb-8 leading-tight text-[#4A3F35]">
                 {t.hero.title[0]} <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8C7B6D] to-[#A89A8F]">{t.hero.title[1]}</span> <br />
@@ -115,10 +116,10 @@ export default function Home() {
                   <span className="text-[#6B5A4D] font-medium">{t.hero.stat2}</span>
                 </div> */}
               </div>
-            </div>
+            </FadeIn>
 
             {/* Right Image */}
-            <div className="order-1 md:order-2 flex justify-center md:justify-end">
+            <FadeIn delay={0.12} className="order-1 md:order-2 flex justify-center md:justify-end">
               <div className="relative w-full max-w-xs">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#8C7B6D]/20 to-[#4A3F35]/20 rounded-3xl blur-3xl"></div>
                 <div className="relative ">
@@ -131,7 +132,7 @@ export default function Home() {
                   />
                 </div>
               </div>
-            </div>
+            </FadeIn>
           </div>
 
           {/* Scroll Indicator */}
@@ -149,18 +150,18 @@ export default function Home() {
       {/* FEATURES SECTION */}
       <section id="features" className="py-20 md:py-32 bg-gradient-to-b from-[#4A3F35] to-[#3A3028] text-[#F5F0E9] px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16 md:mb-20">
+          <FadeIn className="text-center mb-16 md:mb-20">
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6">{t.features.title}</h2>
             <p className="text-lg md:text-xl opacity-80 max-w-2xl mx-auto">{t.features.subtitle}</p>
-          </div>
+          </FadeIn>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          <StaggerGrid className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {t.features.items.map((f, i) => (
+              <StaggerItem key={i}>
               <div
-                key={i}
                 onMouseEnter={() => setHoveredFeature(i)}
                 onMouseLeave={() => setHoveredFeature(null)}
-                className="group relative bg-gradient-to-br from-[#F5F0E9]/10 to-[#F5F0E9]/5 backdrop-blur-lg rounded-2xl md:rounded-3xl p-6 md:p-8 border border-[#F5F0E9]/20 hover:border-[#F5F0E9]/40 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
+                className="group relative h-full bg-gradient-to-br from-[#F5F0E9]/10 to-[#F5F0E9]/5 backdrop-blur-lg rounded-2xl md:rounded-3xl p-6 md:p-8 border border-[#F5F0E9]/20 hover:border-[#F5F0E9]/40 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-[#8C7B6D]/0 to-[#F5F0E9]/0 group-hover:from-[#8C7B6D]/10 group-hover:to-[#F5F0E9]/5 rounded-2xl md:rounded-3xl transition-all duration-300"></div>
 
@@ -180,19 +181,20 @@ export default function Home() {
                   <ArrowRight size={24} className="text-[#8C7B6D]" />
                 </div>
               </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerGrid>
         </div>
       </section>
 
       {/* BENEFITS SECTION */}
       <section className="py-20 md:py-32 bg-gradient-to-b from-[#E8DED3] to-[#F5F0E9] px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-center mb-16 md:mb-20 text-[#4A3F35]">{t.benefits.title}</h2>
+          <FadeIn><h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-center mb-16 md:mb-20 text-[#4A3F35]">{t.benefits.title}</h2></FadeIn>
 
-          <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+          <StaggerGrid className="grid md:grid-cols-2 gap-8 md:gap-12">
             {t.benefits.items.map((benefit, i) => (
-              <div key={i} className="flex gap-4 md:gap-6 group">
+              <StaggerItem key={i} className="flex gap-4 md:gap-6 group">
                 <div className="flex-shrink-0">
                   <div className="flex items-center justify-center h-12 w-12 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-[#8C7B6D] to-[#6B5A4D] text-white font-bold text-lg md:text-2xl group-hover:scale-110 transition-transform duration-300">
                     {benefit.number}
@@ -202,34 +204,38 @@ export default function Home() {
                   <h3 className="text-xl md:text-2xl font-bold text-[#4A3F35] mb-2 md:mb-3">{benefit.title}</h3>
                   <p className="text-base md:text-lg text-[#6B5A4D] leading-relaxed">{benefit.desc}</p>
                 </div>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerGrid>
         </div>
       </section>
 
       {/* SCREENSHOTS SECTION */}
       <section className="py-20 md:py-32 bg-gradient-to-b from-[#F5F0E9] to-[#E8DED3] px-4">
         <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 md:mb-8 text-[#4A3F35]">{t.screenshots.title}</h2>
-          <p className="text-lg md:text-xl text-[#6B5A4D] mb-12 md:mb-16 max-w-2xl mx-auto">{t.screenshots.subtitle}</p>
+          <FadeIn>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 md:mb-8 text-[#4A3F35]">{t.screenshots.title}</h2>
+            <p className="text-lg md:text-xl text-[#6B5A4D] mb-12 md:mb-16 max-w-2xl mx-auto">{t.screenshots.subtitle}</p>
+          </FadeIn>
 
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "flex-start", gap: "28px" }}>
+          <StaggerGrid gap={0.08} style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "flex-start", gap: "28px" }}>
             {t.screenshots.shots.map((s, i) => (
-              <figure key={i} style={{ margin: 0, width: 230 }}>
-                <PhoneFrame src={s.src} alt={s.label} />
-                <figcaption style={{ marginTop: 14, fontSize: 15, fontWeight: 600, color: "#6B5A4D" }}>
-                  {s.label}
-                </figcaption>
-              </figure>
+              <StaggerItem key={i} style={{ width: 230 }} whileHover={{ y: -8, transition: { duration: 0.22, ease: 'easeOut' } }}>
+                <figure style={{ margin: 0 }}>
+                  <PhoneFrame src={s.src} alt={s.label} />
+                  <figcaption style={{ marginTop: 14, fontSize: 15, fontWeight: 600, color: "#6B5A4D" }}>
+                    {s.label}
+                  </figcaption>
+                </figure>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerGrid>
         </div>
       </section>
 
       {/* CTA SECTION */}
       <section className="py-20 md:py-32 bg-gradient-to-br from-[#4A3F35] via-[#5A4A3F] to-[#3A3028] text-[#F5F0E9] px-4">
-        <div className="max-w-4xl mx-auto text-center">
+        <FadeIn className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 md:mb-8">{t.cta.title}</h2>
           <p className="text-xl md:text-2xl mb-12 md:mb-16 opacity-90 leading-relaxed whitespace-pre-line">{t.cta.subtitle}</p>
 
@@ -264,7 +270,7 @@ export default function Home() {
           </div>
 
           <p className="mt-12 md:mt-16 text-base md:text-lg opacity-70">{t.cta.footer}</p>
-        </div>
+        </FadeIn>
       </section>
     </>
   );

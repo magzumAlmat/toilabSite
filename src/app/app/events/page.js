@@ -3,6 +3,7 @@
 // Кабинет клиента: список созданных мероприятий (GET /api/getallweddings).
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../_lib/AppContext';
 import { getWeddings, deleteWedding } from '../_lib/apiClient';
 import { fmt } from '../_lib/events';
@@ -87,13 +88,18 @@ export default function EventsList() {
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <motion.div layout style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <AnimatePresence initial={false}>
         {events.map((e) => {
           const total = e.total_cost ?? 0;
           const budget = e.budget ?? 0;
           const remain = e.remaining_balance ?? (budget - total);
           return (
-            <div key={e.id} style={{ background: '#fff', border: '1px solid rgba(212,196,176,0.6)', borderRadius: 16, padding: 16 }}>
+            <motion.div layout key={e.id}
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, x: -24, transition: { duration: 0.18 } }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              style={{ background: '#fff', border: '1px solid rgba(212,196,176,0.6)', borderRadius: 16, padding: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                 <Link href={`/app/events/${e.id}`} style={{ textDecoration: 'none', color: '#4A3F35', flex: 1 }}>
                   <div style={{ fontWeight: 800, fontSize: 17 }}>{e.name || t('Без названия', 'Атаусыз')}</div>
@@ -109,10 +115,11 @@ export default function EventsList() {
                 <span style={{ color: '#6B5A4D' }}>{t('Услуги', 'Қызметтер')}: <b>{fmt(total)} ₸</b></span>
                 <span style={{ color: remain < 0 ? '#A33' : '#3A7' }}>{t('Остаток', 'Қалдық')}: <b>{fmt(remain)} ₸</b></span>
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 }

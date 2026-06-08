@@ -4,6 +4,7 @@
 // состояния, шапка с городом/языком/корзиной/авторизацией. Вынесена из
 // app/layout.js, чтобы сам layout остался серверным и мог экспортировать metadata.
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { AppProvider, useApp } from './AppContext';
 import { CartProvider, useCart } from './CartContext';
@@ -90,7 +91,13 @@ function AppHeader() {
         <Link href="/app/cart" style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 999, border: '1px solid #D4C4B0', textDecoration: 'none', fontSize: 18 }} title={isKz ? 'Себет' : 'Корзина'}>
           🛒
           {count > 0 && (
-            <span style={{ position: 'absolute', top: -6, right: -6, background: '#B08D57', color: '#fff', borderRadius: 999, minWidth: 20, height: 20, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>{count}</span>
+            <motion.span
+              key={count}
+              initial={{ scale: 0.5 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 600, damping: 18 }}
+              style={{ position: 'absolute', top: -6, right: -6, background: '#B08D57', color: '#fff', borderRadius: 999, minWidth: 20, height: 20, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}
+            >{count}</motion.span>
           )}
         </Link>
 

@@ -9,6 +9,7 @@ import { useCart } from '../../../_lib/CartContext';
 import { CATEGORY_BY_SLUG, pick } from '../../../_lib/categories';
 import { fetchOne, getFiles } from '../../../_lib/apiClient';
 import { getName, getPrice, getSpecs, FILE_SEGMENT, fileUrl, fmtMoney } from '../../../_lib/catalogFields';
+import { FadeIn } from '../../../../_ui/motion';
 
 function unwrap(res) {
   if (!res || typeof res !== 'object') return res;
@@ -59,7 +60,7 @@ export default function ServiceDetail() {
   const backHref = `/app/catalog/${cat.slug}`;
 
   return (
-    <div style={{ maxWidth: 760, margin: '0 auto' }}>
+    <FadeIn style={{ maxWidth: 760, margin: '0 auto' }}>
       <Link href={backHref} style={{ color: '#6B5A4D', textDecoration: 'none', fontSize: 14 }}>← {lang === 'kz' ? cat.kz : cat.ru}</Link>
 
       {ready && !isAuth && (
@@ -147,7 +148,7 @@ export default function ServiceDetail() {
           </div>
         </div>
       )}
-    </div>
+    </FadeIn>
   );
 }
 

@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '../_lib/AppContext';
 import { useCart } from '../_lib/CartContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CATEGORY_BY_SLUG } from '../_lib/categories';
+import { CatIcon } from '../_lib/CatIcon';
 import { getName, getPrice, fmtMoney, trVal } from '../_lib/catalogFields';
 import { isGuestSlug, lineQty, unitCost, cartTotal, buildCartPayload } from '../_lib/cart';
 import { createWedding } from '../_lib/apiClient';
@@ -65,17 +67,22 @@ export default function CartPage() {
       {items.length > 0 && (
         <>
           {/* Позиции */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+          <motion.div layout style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+            <AnimatePresence initial={false}>
             {items.map((c) => {
               const cat = CATEGORY_BY_SLUG[c.slug] || {};
               const unit = unitCost(c.item);
               const guestQty = isGuestSlug(c.slug);
               const qty = lineQty(c.slug, c.quantity, guests);
               return (
-                <div key={`${c.slug}-${c.item.id}`} style={{ background: '#fff', border: '1px solid rgba(212,196,176,0.6)', borderRadius: 14, padding: 14 }}>
+                <motion.div layout key={`${c.slug}-${c.item.id}`}
+                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -24, transition: { duration: 0.18 } }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  style={{ background: '#fff', border: '1px solid rgba(212,196,176,0.6)', borderRadius: 14, padding: 14 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 12, color: '#8C7B6D' }}>{cat.icon} {lang === 'kz' ? cat.kz : cat.ru}</div>
+                      <div style={{ fontSize: 12, color: '#8C7B6D', display: 'flex', alignItems: 'center', gap: 6 }}><CatIcon slug={c.slug} size={14} /> {lang === 'kz' ? cat.kz : cat.ru}</div>
                       <div style={{ fontWeight: 700, color: '#4A3F35', overflow: 'hidden', textOverflow: 'ellipsis' }}>{getName(c.item)}</div>
                       {c.item.district && <div style={{ fontSize: 12, color: '#8C7B6D' }}>{trVal(c.item.district, lang)}</div>}
                     </div>
@@ -106,10 +113,11 @@ export default function CartPage() {
                       </>
                     ))}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+            </AnimatePresence>
+          </motion.div>
 
           {/* Оформление */}
           <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>{t('Оформление мероприятия', 'Іс-шараны рәсімдеу')}</h2>

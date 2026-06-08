@@ -4,17 +4,16 @@
 // состояния, шапка с городом/языком/корзиной/авторизацией. Вынесена из
 // app/layout.js, чтобы сам layout остался серверным и мог экспортировать metadata.
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { AppProvider, useApp } from './AppContext';
-import { CartProvider, useCart } from './CartContext';
+import { CartProvider } from './CartContext';
 import { CITIES } from './categories';
 
 export default function AppShell({ children }) {
   return (
     <AppProvider>
       <CartProvider>
-        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#F5F0E9', color: '#4A3F35', fontFamily: 'var(--font-roboto), sans-serif' }}>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#FAF7F2', color: '#2C2420', fontFamily: 'var(--font-nunito), var(--font-roboto), sans-serif' }}>
           <AppHeader />
           <main style={{ flex: 1, width: '100%', maxWidth: 1100, margin: '0 auto', padding: '24px 16px 64px' }}>{children}</main>
           <AppFooter />
@@ -26,7 +25,6 @@ export default function AppShell({ children }) {
 
 function AppHeader() {
   const { city, setCity, lang, setLang, isAuth, user, signOut } = useApp();
-  const { count } = useCart();
   const pathname = usePathname() || '';
   const isKz = lang === 'kz';
 
@@ -86,20 +84,6 @@ function AppHeader() {
             </button>
           ))}
         </div>
-
-        {/* Корзина */}
-        <Link href="/app/cart" style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 999, border: '1px solid #D4C4B0', textDecoration: 'none', fontSize: 18 }} title={isKz ? 'Себет' : 'Корзина'}>
-          🛒
-          {count > 0 && (
-            <motion.span
-              key={count}
-              initial={{ scale: 0.5 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 600, damping: 18 }}
-              style={{ position: 'absolute', top: -6, right: -6, background: '#B08D57', color: '#fff', borderRadius: 999, minWidth: 20, height: 20, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}
-            >{count}</motion.span>
-          )}
-        </Link>
 
         {/* Авторизация */}
         {isAuth ? (

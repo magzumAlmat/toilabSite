@@ -2,14 +2,23 @@
 // Маркетинговая обвязка (шапка/футер) живёт в группе (site), раздел модерации —
 // в /moderation со своей оболочкой MUI.
 import './globals.css';
-import { Roboto } from 'next/font/google';
+import { Roboto, Nunito } from 'next/font/google';
 
-// Самохостинг шрифта через next/font: убирает рендер-блокирующий запрос к
+// Самохостинг шрифтов через next/font: убирает рендер-блокирующий запрос к
 // fonts.googleapis.com и CLS. Playfair Display убран — нигде не использовался.
 const roboto = Roboto({
   subsets: ['latin', 'cyrillic'],
   weight: ['400', '500', '700', '900'],
   variable: '--font-roboto',
+  display: 'swap',
+});
+
+// Nunito — дружелюбный rounded-sans для веб-приложения /app (стиль маркетплейса
+// доставки: мягкий, аппетитный). Подключаем как --font-nunito.
+const nunito = Nunito({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600', '700', '800', '900'],
+  variable: '--font-nunito',
   display: 'swap',
 });
 
@@ -50,7 +59,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ru" className={roboto.variable}>
+    <html lang="ru" className={`${roboto.variable} ${nunito.variable}`}>
       <body>{children}</body>
     </html>
   );

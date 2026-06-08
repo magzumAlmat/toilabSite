@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '../../_lib/AppContext';
 import { useCart } from '../../_lib/CartContext';
-import { CATEGORY_BY_SLUG, pick } from '../../_lib/categories';
+import { CATEGORIES, CATEGORY_BY_SLUG, pick } from '../../_lib/categories';
 import { CatIcon } from '../../_lib/CatIcon';
 import { StaggerGrid, StaggerItem } from '../../../_ui/motion';
 
@@ -112,12 +112,32 @@ export default function CategoryList() {
       <style>{`
         @keyframes tl-shimmer { 0% { background-position: -468px 0 } 100% { background-position: 468px 0 } }
         .tl-skel { background: #EFE7DA; background-image: linear-gradient(90deg,#EFE7DA 0px,#F7F1E7 200px,#EFE7DA 400px); background-size: 900px 100%; animation: tl-shimmer 1.4s linear infinite; }
-        .tl-card { transition: box-shadow .18s ease, border-color .18s ease; }
-        .tl-card:hover { box-shadow: 0 12px 28px rgba(74,63,53,0.13); border-color: #B08D57; }
+        .tl-card { transition: box-shadow .2s ease; }
+        .tl-card:hover { box-shadow: 0 14px 30px rgba(0,0,0,0.10); }
         @media (prefers-reduced-motion: reduce) { .tl-skel { animation: none } }
+        .tl-pills { scrollbar-width: none; -ms-overflow-style: none; }
+        .tl-pills::-webkit-scrollbar { display: none; }
       `}</style>
       <Link href="/app" style={{ color: '#6B5A4D', textDecoration: 'none', fontSize: 14 }}>← {t('Назад', 'Артқа')}</Link>
-      <h1 style={{ fontSize: 28, fontWeight: 800, margin: '10px 0 4px', display: 'flex', alignItems: 'center', gap: 10, color: '#4A3F35' }}>
+
+      {/* Пилюли категорий (как меню доставки): быстрый переход между разделами */}
+      <div className="tl-pills" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '12px 0', margin: '4px 0' }}>
+        {CATEGORIES.map((c) => {
+          const active = c.slug === category;
+          return (
+            <Link key={c.slug} href={`/app/catalog/${c.slug}`}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', textDecoration: 'none',
+                padding: '8px 14px', borderRadius: 999, fontSize: 14, fontWeight: 700,
+                background: active ? '#4A3F35' : '#fff', color: active ? '#fff' : '#2C2420',
+                border: active ? '1px solid #4A3F35' : '1px solid rgba(0,0,0,0.06)',
+                boxShadow: active ? '0 4px 12px rgba(74,63,53,0.22)' : '0 2px 6px rgba(0,0,0,0.04)' }}>
+              <CatIcon slug={c.slug} size={16} /> {lang === 'kz' ? c.kz : c.ru}
+            </Link>
+          );
+        })}
+      </div>
+
+      <h1 style={{ fontSize: 28, fontWeight: 800, margin: '10px 0 4px', display: 'flex', alignItems: 'center', gap: 10, color: '#2C2420' }}>
         <span style={{ width: 44, height: 44, borderRadius: 12, background: '#F3EADB', color: '#B08D57', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <CatIcon slug={cat.slug} size={24} />
         </span>
@@ -156,14 +176,14 @@ export default function CategoryList() {
           return (
             <StaggerItem key={id} whileHover={hoverLift} whileTap={tapPress}>
             <Link href={`/app/catalog/${cat.slug}/${id}`} className="tl-card"
-              style={{ textDecoration: 'none', color: '#4A3F35', background: '#fff', border: '1px solid rgba(212,196,176,0.5)', borderRadius: 18, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}>
+              style={{ textDecoration: 'none', color: '#2C2420', background: '#fff', border: '1px solid rgba(0,0,0,0.04)', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
               <CardImage segment={segment} id={id} slug={cat.slug} alt={name} />
-              <div style={{ padding: 14 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
-                {sub && <div style={{ color: '#8C7B6D', fontSize: 12, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{trVal(sub, lang)}</div>}
+              <div style={{ padding: 16 }}>
+                <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4, color: '#2C2420', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+                {sub && <div style={{ color: '#9B8E82', fontSize: 13, marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{trVal(sub, lang)}</div>}
                 {price != null
-                  ? <div style={{ color: '#B08D57', fontWeight: 700, fontSize: 14, marginBottom: 10 }}>{fmtMoney(price)}</div>
-                  : <div style={{ color: '#A99', fontSize: 13, marginBottom: 10 }}>{t('Цена не указана', 'Бағасы көрсетілмеген')}</div>}
+                  ? <div style={{ color: '#2C2420', fontWeight: 800, fontSize: 17, marginBottom: 12 }}>{fmtMoney(price)}</div>
+                  : <div style={{ color: '#B0A89F', fontSize: 13, marginBottom: 12 }}>{t('Цена не указана', 'Бағасы көрсетілмеген')}</div>}
                 {(() => {
                   const inCart = has(cat.slug, item);
                   return (

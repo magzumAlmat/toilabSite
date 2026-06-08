@@ -1,12 +1,29 @@
 {
-  "name": "Toilab",
+  "id": "/app",
+  "name": "Toilab — Всё для вашего тоя",
   "short_name": "Toilab",
+  "description": "Сервис для организации тоя и любых торжеств: рестораны, тамада, торты, цветы, транспорт и другие услуги в одном месте.",
+  "lang": "ru",
+  "dir": "ltr",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "categories": ["lifestyle", "shopping", "events"],
+  "theme_color": "#4A3F35",
+  "background_color": "#F5F0E9",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/web-app-manifest-512x512.png",
@@ -14,8 +31,5 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
-  "display": "standalone"
+  ]
 }

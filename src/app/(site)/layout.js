@@ -22,12 +22,17 @@ export default function SiteLayout({ children }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Синхронизируем атрибут <html lang> с выбранным языком (для SEO и скринридеров).
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   const t = lang === 'ru' ? ru : kz;
 
   return (
     <div
       className="bg-gradient-to-b from-[#F5F0E9] to-[#E8DED3] text-[#4A3F35] min-h-screen"
-      style={{ fontFamily: "'Roboto', sans-serif" }}
+      style={{ fontFamily: 'var(--font-roboto), sans-serif' }}
     >
       {/* Передаём lang и setLang через контекст */}
       <LangContext.Provider value={{ lang, setLang }}>
@@ -52,8 +57,8 @@ export default function SiteLayout({ children }) {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-8">
-              <Link href="/" className="text-base font-medium text-[#4A3F35] hover:text-[#8C7B6D] transition-colors duration-200 relative group">
-                {t.nav.home}
+              <Link href="/about" className="text-base font-medium text-[#4A3F35] hover:text-[#8C7B6D] transition-colors duration-200 relative group">
+                {t.nav.about}
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#8C7B6D] transition-all duration-300 group-hover:w-full"></span>
               </Link>
               <Link href="/contacts" className="text-base font-medium text-[#4A3F35] hover:text-[#8C7B6D] transition-colors duration-200 relative group">
@@ -104,11 +109,11 @@ export default function SiteLayout({ children }) {
             <div className="md:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md shadow-xl border-t border-[#D4C4B0]/20 animate-in fade-in slide-in-from-top-2">
               <div className="px-6 py-4 space-y-3">
                 <Link
-                  href="/"
+                  href="/about"
                   className="block text-base font-medium text-[#4A3F35] hover:text-[#8C7B6D] transition-colors py-2"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  {t.nav.home}
+                  {t.nav.about}
                 </Link>
                 <Link
                   href="/contacts"
@@ -178,7 +183,7 @@ export default function SiteLayout({ children }) {
               <div>
                 <h3 className="text-lg font-bold mb-4">{t.footer.links}</h3>
                 <ul className="space-y-2 text-sm">
-                  <li><Link href="/" className="opacity-80 hover:opacity-100 transition">{t.nav.home}</Link></li>
+                  <li><Link href="/about" className="opacity-80 hover:opacity-100 transition">{t.nav.about}</Link></li>
                   <li><Link href="/contacts" className="opacity-80 hover:opacity-100 transition">{t.nav.contacts}</Link></li>
                   <li><Link href="/privacy" className="opacity-80 hover:opacity-100 transition">{t.nav.privacy}</Link></li>
                 </ul>
@@ -202,6 +207,7 @@ export default function SiteLayout({ children }) {
 const ru = {
   nav: {
     home: "Главная",
+    about: "О нас",
     contacts: "Контакты",
     privacy: "Политика конфиденциальности"
   },
@@ -218,6 +224,7 @@ const ru = {
 const kz = {
   nav: {
     home: "Басты бет",
+    about: "Біз туралы",
     contacts: "Байланыс",
     privacy: "Құпиялылық саясаты"
   },

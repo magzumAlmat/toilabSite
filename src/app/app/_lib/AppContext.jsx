@@ -34,6 +34,11 @@ export function AppProvider({ children }) {
     }
   }, []);
 
+  // Синхронизируем атрибут <html lang> с выбранным языком (kz по умолчанию).
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   const setCity = useCallback((c) => {
     setCityState(c);
     window.localStorage.setItem(CITY_KEY, c);

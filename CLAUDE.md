@@ -19,6 +19,36 @@
 
 ## Журнал
 
+### 2026-06-06 — SEO / PWA / шрифты / lang (фронт; бэкенд и nginx НЕ трогали)
+По итогам анализа toilab.kz/app сделаны фронтовые правки (без бэкенда/nginx):
+- **SEO-инфраструктура**: добавлены `src/app/robots.js` (раньше `/robots.txt` отдавал 404)
+  и `src/app/sitemap.js` (раньше `/sitemap.xml` — 404). Sitemap включает `/`, `/contacts`,
+  `/privacy`, `/app` и все страницы категорий `/app/catalog/<slug>` (из `categories.js`).
+  В robots закрыты приватные/требующие логина разделы (cart/events/supplier/login/register,
+  /moderation, /toilab-api).
+- **Метаданные**: в корневом `layout.js` — `metadataBase`, `title.template = "%s — Toilab"`,
+  `description`, `keywords`, OpenGraph/Twitter (og:image = `/images/logo.png`), `viewport.themeColor`.
+  Раньше у ВСЕХ страниц был одинаковый `<title>` без description/OG.
+- **Per-route metadata для клиентских страниц**: `app/layout.js` переписан в серверный
+  компонент (экспортит metadata), клиентская оболочка вынесена в `_lib/AppShell.jsx`.
+  Добавлен `catalog/[category]/layout.js` c `generateMetadata` → у каждой категории свой
+  `<title>`/description/canonical (напр. «Рестораны для тоя — Toilab»; через `title.absolute`,
+  т.к. шаблон не доходит через промежуточный /app layout).
+- **`<html lang>`**: теперь синхронизируется с переключателем языка через эффект в
+  `AppContext.jsx` (раздел /app, kz по умолчанию) и в `(site)/layout.js` (лендинг).
+- **Шрифты самохостинг**: Google Fonts `<link>` заменён на `next/font/google` (Roboto,
+  subsets latin+cyrillic) — убран рендер-блокирующий запрос. Playfair Display удалён
+  (нигде не использовался). `globals.css` body и инлайн-стили обёрток → `var(--font-roboto)`.
+- **PWA manifest** (`src/app/manifest.json`): иконки `/web-app-manifest-{192,512}.png`
+  раньше отдавали 404 — сгенерированы из логотипа (sips, padding на фоне `#F5F0E9`,
+  в `public/`). Добавлены `id/start_url=/app/scope/description/lang/categories`, бренд-цвета
+  (`theme_color #4A3F35`, `background #F5F0E9`), purpose any+maskable.
+- ✅ Проверено локально (`npm run build` + `npm run start` :5001): build зелёный;
+  `/robots.txt` и `/sitemap.xml` 200; `/app` title «Каталог услуг для тоя — Toilab» + og:image;
+  категория «Рестораны для тоя — Toilab» + canonical; 0 ссылок на fonts.googleapis.com
+  (woff2 из `/_next/static/media`); иконки PWA 192/512 → 200.
+- НЕ закоммичено/не задеплоено (ждёт явного разрешения).
+
 ### 2026-06-05 — «Поделиться» использует серверную страницу приглашения
 - `events/[id]/page.js` `shareEvent`: ссылка теперь `https://api.toilab.kz/api/weddingwishes/{id}` (готовая
   серверная страница-приглашение с подарками, как `Share.share` в моб. Item3Screen), вместо своей

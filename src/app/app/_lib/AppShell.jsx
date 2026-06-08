@@ -32,6 +32,13 @@ function AppHeader() {
           Toilab
         </Link>
 
+        {/* Ссылки на статические страницы лендинга (раздел (site)) */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+          <Link href="/about" style={navLink}>{lang === 'kz' ? 'Біз туралы' : 'О нас'}</Link>
+          <Link href="/contacts" style={navLink}>{lang === 'kz' ? 'Байланыс' : 'Контакты'}</Link>
+          <Link href="/privacy" style={navLink}>{lang === 'kz' ? 'Құпиялылық саясаты' : 'Политика конфиденциальности'}</Link>
+        </nav>
+
         <div style={{ flex: 1 }} />
 
         {/* Город */}
@@ -103,4 +110,7 @@ const btnDark = {
 const btnGhost = {
   padding: '8px 14px', borderRadius: 999, background: 'transparent', color: '#6B5A4D',
   fontWeight: 600, fontSize: 14, border: '1px solid #D4C4B0', cursor: 'pointer',
+};
+const navLink = {
+  color: '#4A3F35', textDecoration: 'none', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap',
 };

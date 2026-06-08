@@ -1,16 +1,17 @@
-// Генерирует /sitemap.xml (раньше отдавал 404): статические страницы лендинга,
-// вход в приложение и страницы категорий каталога.
-import { CATEGORIES } from './app/_lib/categories';
-
+// Генерирует /sitemap.xml. Включаем ТОЛЬКО реально публичные страницы.
+// Каталог (/app/catalog/*) и карточки услуг сейчас закрыты за логином (фронт
+// показывает экран входа, часть API отдаёт 401) — их в sitemap НЕ кладём,
+// иначе Google индексирует логин-стену (тонкий/cloaked-контент). Когда каталог
+// станет публичным — сюда вернутся категории и детальные страницы.
 const BASE = 'https://toilab.kz';
 
 export default function sitemap() {
   const now = new Date();
 
-  const staticPages = [
-    { path: '/app', priority: 1, changeFrequency: 'weekly' },
-    { path: '/about', priority: 0.7, changeFrequency: 'weekly' },
-    { path: '/contacts', priority: 0.6, changeFrequency: 'monthly' },
+  return [
+    { path: '/app', priority: 1.0, changeFrequency: 'weekly' },   // главная (точка входа)
+    { path: '/about', priority: 0.8, changeFrequency: 'monthly' }, // о нас
+    { path: '/contacts', priority: 0.5, changeFrequency: 'yearly' },
     { path: '/privacy', priority: 0.3, changeFrequency: 'yearly' },
   ].map((p) => ({
     url: `${BASE}${p.path}`,
@@ -18,13 +19,4 @@ export default function sitemap() {
     changeFrequency: p.changeFrequency,
     priority: p.priority,
   }));
-
-  const categoryPages = CATEGORIES.map((c) => ({
-    url: `${BASE}/app/catalog/${c.slug}`,
-    lastModified: now,
-    changeFrequency: 'daily',
-    priority: 0.6,
-  }));
-
-  return [...staticPages, ...categoryPages];
 }

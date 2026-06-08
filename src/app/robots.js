@@ -8,7 +8,8 @@ export default function robots() {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/moderation', '/app/cart', '/app/events', '/app/supplier', '/app/login', '/app/register', '/toilab-api'],
+        // /app/catalog и /app/wishlist сейчас за логином — открыть, когда каталог станет публичным.
+        disallow: ['/moderation', '/app/cart', '/app/events', '/app/supplier', '/app/wishlist', '/app/catalog', '/app/login', '/app/register', '/toilab-api'],
       },
     ],
     sitemap: `${BASE}/sitemap.xml`,

@@ -2,23 +2,16 @@
 // Маркетинговая обвязка (шапка/футер) живёт в группе (site), раздел модерации —
 // в /moderation со своей оболочкой MUI.
 import './globals.css';
-import { Roboto, Nunito } from 'next/font/google';
+import { Inter } from 'next/font/google';
+import Providers from './_ui/Providers';
 
-// Самохостинг шрифтов через next/font: убирает рендер-блокирующий запрос к
-// fonts.googleapis.com и CLS. Playfair Display убран — нигде не использовался.
-const roboto = Roboto({
+// Apple-стиль: на устройствах Apple используется системный SF Pro
+// (-apple-system / BlinkMacSystemFont, см. globals.css), а Inter — кросс-
+// платформенный фолбэк (почти неотличим от SF на Windows/Android). Кириллица есть.
+const inter = Inter({
   subsets: ['latin', 'cyrillic'],
-  weight: ['400', '500', '700', '900'],
-  variable: '--font-roboto',
-  display: 'swap',
-});
-
-// Nunito — дружелюбный rounded-sans для веб-приложения /app (стиль маркетплейса
-// доставки: мягкий, аппетитный). Подключаем как --font-nunito.
-const nunito = Nunito({
-  subsets: ['latin', 'cyrillic'],
-  weight: ['400', '500', '600', '700', '800', '900'],
-  variable: '--font-nunito',
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-inter',
   display: 'swap',
 });
 
@@ -59,8 +52,8 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ru" className={`${roboto.variable} ${nunito.variable}`}>
-      <body>{children}</body>
+    <html lang="ru" className={inter.variable}>
+      <body><Providers>{children}</Providers></body>
     </html>
   );
 }

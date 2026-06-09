@@ -62,8 +62,8 @@ export default function EventsList() {
   if (ready && !isAuth) {
     return (
       <div style={{ textAlign: 'center', padding: '56px 0' }}>
-        <p style={{ color: '#6B5A4D', marginBottom: 20 }}>{t('Войдите, чтобы планировать мероприятия.', 'Іс-шара жоспарлау үшін кіріңіз.')}</p>
-        <Link href="/app/login" style={{ color: '#B08D57' }}>{t('Войти', 'Кіру')}</Link>
+        <p style={{ color: 'var(--ink-2)', marginBottom: 20 }}>{t('Войдите, чтобы планировать мероприятия.', 'Іс-шара жоспарлау үшін кіріңіз.')}</p>
+        <Link href="/app/login?redirect=/app/events" style={{ color: 'var(--accent)', fontWeight: 700 }}>{t('Войти', 'Кіру')}</Link>
       </div>
     );
   }
@@ -71,20 +71,21 @@ export default function EventsList() {
   return (
     <div style={{ maxWidth: 640, margin: '8px auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 800 }}>{t('Мои мероприятия', 'Менің іс-шараларым')}</h1>
-        <Link href="/app/events/new" style={{ background: '#4A3F35', color: '#F5F0E9', borderRadius: 999, padding: '10px 18px', textDecoration: 'none', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap' }}>
+        <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink)' }}>{t('Мои мероприятия', 'Менің іс-шараларым')}</h1>
+        <Link href="/app/events/new" style={{ background: 'var(--brand)', color: 'var(--on-brand)', borderRadius: 'var(--r-pill)', padding: '11px 20px', textDecoration: 'none', fontWeight: 800, fontSize: 14, whiteSpace: 'nowrap', boxShadow: 'var(--shadow-sm)' }}>
           + {t('Создать', 'Жасау')}
         </Link>
       </div>
-      <p style={{ color: '#6B5A4D', fontSize: 14, marginBottom: 20 }}>{t('Планируйте бюджет и услуги для вашего тоя.', 'Тойыңызға бюджет пен қызметтерді жоспарлаңыз.')}</p>
+      <p style={{ color: 'var(--ink-2)', fontSize: 14, marginBottom: 20 }}>{t('Планируйте бюджет и услуги для вашего тоя.', 'Тойыңызға бюджет пен қызметтерді жоспарлаңыз.')}</p>
 
-      {loading && <p style={{ color: '#8C7B6D' }}>{t('Загрузка…', 'Жүктелуде…')}</p>}
-      {error && <div style={{ color: '#A33', background: '#FCEBEB', padding: 10, borderRadius: 10, fontSize: 14, marginBottom: 14 }}>{error}</div>}
+      {loading && <p style={{ color: 'var(--ink-3)' }}>{t('Загрузка…', 'Жүктелуде…')}</p>}
+      {error && <div role="alert" style={{ color: 'var(--danger)', background: 'var(--danger-bg)', padding: 10, borderRadius: 10, fontSize: 14, marginBottom: 14 }}>{error}</div>}
 
       {!loading && !error && events.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: '#8C7B6D' }}>
+        <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-3)' }}>
+          <div style={{ fontSize: 40, marginBottom: 10 }}>📋</div>
           <p style={{ marginBottom: 16 }}>{t('У вас пока нет мероприятий.', 'Сізде әзірге іс-шара жоқ.')}</p>
-          <Link href="/app/events/new" style={{ color: '#B08D57', fontWeight: 700 }}>{t('Создать первое →', 'Біріншісін жасау →')}</Link>
+          <Link href="/app/events/new" style={{ color: 'var(--accent)', fontWeight: 800 }}>{t('Создать первое →', 'Біріншісін жасау →')}</Link>
         </div>
       )}
 
@@ -99,21 +100,21 @@ export default function EventsList() {
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, x: -24, transition: { duration: 0.18 } }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              style={{ background: '#fff', border: '1px solid rgba(212,196,176,0.6)', borderRadius: 16, padding: 16 }}>
+              style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--r)', padding: 18, boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                <Link href={`/app/events/${e.id}`} style={{ textDecoration: 'none', color: '#4A3F35', flex: 1 }}>
+                <Link href={`/app/events/${e.id}`} style={{ textDecoration: 'none', color: 'var(--ink)', flex: 1 }}>
                   <div style={{ fontWeight: 800, fontSize: 17 }}>{e.name || t('Без названия', 'Атаусыз')}</div>
-                  <div style={{ color: '#8C7B6D', fontSize: 13, marginTop: 2 }}>{e.date || ''}</div>
+                  <div style={{ color: 'var(--ink-3)', fontSize: 13, marginTop: 2 }}>{e.date || ''}</div>
                 </Link>
                 <button onClick={() => onDelete(e.id)} disabled={delId === e.id}
-                  style={{ border: 'none', background: 'none', color: '#A33', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                  style={{ border: 'none', background: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
                   {delId === e.id ? '…' : t('Удалить', 'Жою')}
                 </button>
               </div>
-              <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap', fontSize: 13 }}>
-                <span style={{ color: '#6B5A4D' }}>{t('Бюджет', 'Бюджет')}: <b>{fmt(budget)} ₸</b></span>
-                <span style={{ color: '#6B5A4D' }}>{t('Услуги', 'Қызметтер')}: <b>{fmt(total)} ₸</b></span>
-                <span style={{ color: remain < 0 ? '#A33' : '#3A7' }}>{t('Остаток', 'Қалдық')}: <b>{fmt(remain)} ₸</b></span>
+              <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap', fontSize: 13, fontWeight: 600 }}>
+                <span style={{ color: 'var(--ink-2)' }}>{t('Бюджет', 'Бюджет')}: <b style={{ color: 'var(--ink)' }}>{fmt(budget)} ₸</b></span>
+                <span style={{ color: 'var(--ink-2)' }}>{t('Услуги', 'Қызметтер')}: <b style={{ color: 'var(--ink)' }}>{fmt(total)} ₸</b></span>
+                <span style={{ color: remain < 0 ? 'var(--danger)' : 'var(--ok)' }}>{t('Остаток', 'Қалдық')}: <b>{fmt(remain)} ₸</b></span>
               </div>
             </motion.div>
           );

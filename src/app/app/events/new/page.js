@@ -168,8 +168,8 @@ export default function NewEvent() {
   if (ready && !isAuth) {
     return (
       <div style={{ textAlign: 'center', padding: '56px 0' }}>
-        <p style={{ color: '#6B5A4D', marginBottom: 20 }}>{t('Войдите, чтобы создать мероприятие.', 'Іс-шара жасау үшін кіріңіз.')}</p>
-        <Link href="/app/login" style={{ color: '#B08D57' }}>{t('Войти', 'Кіру')}</Link>
+        <p style={{ color: 'var(--ink-2)', marginBottom: 20 }}>{t('Войдите, чтобы создать мероприятие.', 'Іс-шара жасау үшін кіріңіз.')}</p>
+        <Link href="/app/login?redirect=/app/events/new" style={{ color: 'var(--accent)', fontWeight: 700 }}>{t('Войти', 'Кіру')}</Link>
       </div>
     );
   }
@@ -177,11 +177,13 @@ export default function NewEvent() {
   return (
     <div style={{ maxWidth: 640, margin: '8px auto', paddingBottom: phase === 'results' ? 90 : 24 }}>
       <style>{`@keyframes tlspin{to{transform:rotate(360deg)}}`}</style>
-      <Link href="/app/events" style={{ color: '#6B5A4D', textDecoration: 'none', fontSize: 14 }}>← {t('Мои мероприятия', 'Менің іс-шараларым')}</Link>
-      <h1 style={{ fontSize: 26, fontWeight: 800, margin: '10px 0 14px' }}>{t('Новое мероприятие', 'Жаңа іс-шара')}</h1>
+      <Link href="/app/events" style={{ color: 'var(--ink-2)', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>← {t('Мои мероприятия', 'Менің іс-шараларым')}</Link>
+      <h1 style={{ fontSize: 28, fontWeight: 900, margin: '10px 0 2px', color: 'var(--ink)' }}>{t('Новое мероприятие', 'Жаңа іс-шара')}</h1>
+      <p style={{ color: 'var(--ink-2)', fontSize: 15, margin: '0 0 16px' }}>{t('Укажите бюджет и число гостей — услуги подберём автоматически.', 'Бюджет пен қонақ санын көрсетіңіз — қызметтерді автоматты таңдаймыз.')}</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* ── Параметры ── */}
+        {/* ── Карточка параметров ── */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--r)', padding: 18, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
           <div style={lbl}>{t('Тип мероприятия', 'Іс-шара түрі')}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
@@ -189,8 +191,8 @@ export default function NewEvent() {
               const on = et.key === typeKey;
               return (
                 <button type="button" key={et.key} onClick={() => changeType(et.key)}
-                  style={{ padding: '10px 16px', borderRadius: 999, fontSize: 14, cursor: 'pointer', fontWeight: 600,
-                    border: on ? '1px solid #B08D57' : '1px solid #D4C4B0', background: on ? '#B08D57' : '#fff', color: on ? '#fff' : '#6B5A4D' }}>
+                  style={{ padding: '11px 18px', borderRadius: 'var(--r-pill)', fontSize: 14, cursor: 'pointer', fontWeight: 700,
+                    border: on ? '1px solid var(--accent)' : '1px solid var(--line-2)', background: on ? 'var(--accent)' : 'var(--surface)', color: on ? '#fff' : 'var(--ink-2)', boxShadow: on ? 'var(--shadow-sm)' : 'none' }}>
                   {et.icon} {L(et)}
                 </button>
               );
@@ -209,24 +211,25 @@ export default function NewEvent() {
           <label style={{ ...col, flex: '1 1 120px' }}><span style={lbl}>{t('Гостей', 'Қонақтар')}</span>
             <input type="number" inputMode="numeric" value={guests} onChange={(e) => setGuests(e.target.value)} placeholder="0" style={inp} /></label>
         </div>
-        <div style={{ fontSize: 13, color: '#8C7B6D' }}>{t('Город', 'Қала')}: <b>{city || '—'}</b>. {t('Для ресторана и гостиницы количество = число гостей.', 'Мейрамхана мен қонақ үй үшін саны = қонақтар саны.')}</div>
+        <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t('Город', 'Қала')}: <b>{city || '—'}</b>. {t('Для ресторана и гостиницы количество = число гостей.', 'Мейрамхана мен қонақ үй үшін саны = қонақтар саны.')}</div>
+        </div>
 
         {/* ── Этап «idle»: подсказка ── */}
         {phase === 'idle' && (
-          <div style={{ background: '#FAF6F0', border: '1px dashed #D4C4B0', borderRadius: 14, padding: '24px 18px', textAlign: 'center' }}>
+          <div style={{ background: 'var(--surface-2)', border: '1px dashed var(--line-2)', borderRadius: 'var(--r)', padding: '26px 18px', textAlign: 'center' }}>
             <div style={{ fontSize: 34, marginBottom: 8 }}>🧮</div>
-            <div style={{ fontWeight: 700, color: '#4A3F35', marginBottom: 4 }}>{t('Укажите бюджет и количество гостей', 'Бюджет пен қонақтар санын көрсетіңіз')}</div>
-            <div style={{ color: '#8C7B6D', fontSize: 14, marginBottom: 14 }}>{t('Мы автоматически подберём услуги под ваш бюджет.', 'Біз бюджетке қарай қызметтерді автоматты таңдаймыз.')}</div>
+            <div style={{ fontWeight: 800, color: 'var(--ink)', marginBottom: 4 }}>{t('Укажите бюджет и количество гостей', 'Бюджет пен қонақтар санын көрсетіңіз')}</div>
+            <div style={{ color: 'var(--ink-3)', fontSize: 14, marginBottom: 14 }}>{t('Мы автоматически подберём услуги под ваш бюджет.', 'Біз бюджетке қарай қызметтерді автоматты таңдаймыз.')}</div>
             <button type="button" onClick={pickManually} style={linkBtn}>{t('Или выбрать услуги вручную', 'Немесе қызметтерді қолмен таңдау')}</button>
           </div>
         )}
 
         {/* ── Этап «loading»: лоадер ── */}
         {phase === 'loading' && (
-          <div style={{ background: '#fff', border: '1px solid rgba(212,196,176,0.6)', borderRadius: 14, padding: '36px 18px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 42, height: 42, borderRadius: '50%', border: '4px solid #EADFCD', borderTopColor: '#B08D57', animation: 'tlspin 0.8s linear infinite' }} />
-            <div style={{ fontWeight: 700, color: '#4A3F35' }}>{t('Подбираем услуги под ваш бюджет…', 'Бюджетке қарай қызметтерді таңдаудамыз…')}</div>
-            <div style={{ color: '#8C7B6D', fontSize: 13 }}>{t('Считаем стоимость и остаток', 'Құнын және қалдықты есептеудеміз')}</div>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--r)', padding: '36px 18px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ width: 42, height: 42, borderRadius: '50%', border: '4px solid var(--surface-3)', borderTopColor: 'var(--accent)', animation: 'tlspin 0.8s linear infinite' }} />
+            <div style={{ fontWeight: 800, color: 'var(--ink)' }}>{t('Подбираем услуги под ваш бюджет…', 'Бюджетке қарай қызметтерді таңдаудамыз…')}</div>
+            <div style={{ color: 'var(--ink-3)', fontSize: 13 }}>{t('Считаем стоимость и остаток', 'Құнын және қалдықты есептеудеміз')}</div>
           </div>
         )}
 
@@ -234,20 +237,20 @@ export default function NewEvent() {
         {phase === 'results' && (
           <>
             {autoNote === 'ok' && selected.length > 0 && (
-              <div style={{ fontSize: 14, color: '#3A7' }}>✓ {t('Подобрано в рамках бюджета — можно изменить.', 'Бюджет аясында таңдалды — өзгертуге болады.')}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ok)', background: 'rgba(47,125,87,0.08)', border: '1px solid rgba(47,125,87,0.25)', borderRadius: 'var(--r-sm)', padding: '10px 14px' }}>✓ {t('Подобрано в рамках бюджета — можно изменить.', 'Бюджет аясында таңдалды — өзгертуге болады.')}</div>
             )}
             {autoNote === 'over' && (
-              <div style={{ fontSize: 14, color: '#A33' }}>{t('Бюджета не хватает на все категории — подобран доступный набор.', 'Бюджет барлық санатқа жетпейді — қолжетімді жинақ таңдалды.')}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--danger)', background: 'var(--danger-bg)', border: '1px solid rgba(192,73,47,0.25)', borderRadius: 'var(--r-sm)', padding: '10px 14px' }}>{t('Бюджета не хватает на все категории — подобран доступный набор.', 'Бюджет барлық санатқа жетпейді — қолжетімді жинақ таңдалды.')}</div>
             )}
 
             {/* Сводка подобранного */}
             {selected.length > 0 && (
-              <div style={{ background: '#FAF6F0', border: '1px solid #E5D9C8', borderRadius: 12, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--r)', padding: 14, boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontWeight: 700, color: '#4A3F35', fontSize: 14 }}>{t('Выбранные услуги', 'Таңдалған қызметтер')}</span>
+                  <span style={{ fontWeight: 800, color: 'var(--ink)', fontSize: 15 }}>{t('Выбранные услуги', 'Таңдалған қызметтер')}</span>
                   <div style={{ display: 'flex', gap: 14 }}>
                     <button type="button" onClick={reAutoPick} style={linkBtn}>{t('Подобрать заново', 'Қайта таңдау')}</button>
-                    <button type="button" onClick={clearSelection} style={{ ...linkBtn, color: '#A33' }}>{t('Очистить', 'Тазалау')}</button>
+                    <button type="button" onClick={clearSelection} style={{ ...linkBtn, color: 'var(--danger)' }}>{t('Очистить', 'Тазалау')}</button>
                   </div>
                 </div>
                 {selected.map((s) => {
@@ -256,18 +259,18 @@ export default function NewEvent() {
                   const isGuestQty = s.catKey === 'restaurants' || s.catKey === 'hotels';
                   const qty = isGuestQty ? (parseInt(guests, 10) || 1) : s.quantity;
                   return (
-                    <div key={keyOf(s.catKey, s.item)} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '8px 0', borderTop: '1px solid rgba(212,196,176,0.4)' }}>
+                    <div key={keyOf(s.catKey, s.item)} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '8px 0', borderTop: '1px solid var(--line)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                        <span style={{ color: '#4A3F35', fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {cfg.icon} {catalogItemName(s.item)}
                         </span>
                         <span style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <b style={{ color: '#4A3F35', fontSize: 13 }}>{fmt(unit * qty)} ₸</b>
+                          <b style={{ color: 'var(--ink)', fontSize: 13 }}>{fmt(unit * qty)} ₸</b>
                           <button type="button" onClick={() => toggle(s.catKey, s.item)} title={t('Удалить', 'Жою')}
-                            style={{ border: 'none', background: 'none', color: '#A33', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
+                            style={{ border: 'none', background: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
                         </span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#8C7B6D' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--ink-3)' }}>
                         <span>{fmt(unit)} ₸ ×</span>
                         {isGuestQty ? (
                           <span><b>{qty}</b> {t('гостей', 'қонақ')}</span>
@@ -276,13 +279,13 @@ export default function NewEvent() {
                             <button type="button" onClick={() => setQty(s.catKey, s.item, qty - 1)} style={stepBtn}>−</button>
                             <input type="number" inputMode="numeric" min={1} value={s.quantity}
                               onChange={(e) => setQty(s.catKey, s.item, parseInt(e.target.value, 10) || 1)}
-                              style={{ width: 56, padding: '6px 8px', borderRadius: 8, border: '1px solid #D4C4B0', fontSize: 14, color: '#4A3F35', textAlign: 'center' }} />
+                              style={{ width: 56, padding: '6px 8px', borderRadius: 8, border: '1px solid #D4C4B0', fontSize: 14, color: 'var(--ink)', textAlign: 'center' }} />
                             <button type="button" onClick={() => setQty(s.catKey, s.item, qty + 1)} style={stepBtn}>+</button>
                             <span>{t('шт', 'дана')}</span>
                           </>
                         )}
                         <button type="button" onClick={() => setDetail({ catKey: s.catKey, item: s.item })}
-                          style={{ marginLeft: 'auto', border: 'none', background: 'none', color: '#B08D57', cursor: 'pointer', fontSize: 12, fontWeight: 600, padding: 0, whiteSpace: 'nowrap' }}>
+                          style={{ marginLeft: 'auto', border: 'none', background: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 12, fontWeight: 600, padding: 0, whiteSpace: 'nowrap' }}>
                           ⓘ {t('Подробнее', 'Толығырақ')}
                         </button>
                       </div>
@@ -307,16 +310,16 @@ export default function NewEvent() {
                   return (
                     <div key={catKey} style={{ border: '1px solid rgba(212,196,176,0.6)', borderRadius: 12, overflow: 'hidden' }}>
                       <button type="button" onClick={() => openCategory(catKey)}
-                        style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#fff', border: 'none', cursor: 'pointer', fontSize: 15, color: '#4A3F35' }}>
+                        style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#fff', border: 'none', cursor: 'pointer', fontSize: 15, color: 'var(--ink)' }}>
                         <span style={{ fontWeight: 700 }}>{cfg.icon} {lang === 'kz' ? cfg.kz : cfg.ru}</span>
-                        <span style={{ fontSize: 13, color: count ? '#B08D57' : '#8C7B6D' }}>
+                        <span style={{ fontSize: 13, color: count ? 'var(--accent)' : 'var(--ink-3)' }}>
                           {count ? `${t('выбрано', 'таңдалды')}: ${count}` : ''} {open ? '▲' : '▼'}
                         </span>
                       </button>
                       {open && (
-                        <div style={{ borderTop: '1px solid rgba(212,196,176,0.6)', background: '#FAF6F0', padding: 10, display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflowY: 'auto' }}>
-                          {loadingCat === catKey && <div style={{ color: '#8C7B6D', fontSize: 14 }}>{t('Загрузка…', 'Жүктелуде…')}</div>}
-                          {loadingCat !== catKey && items.length === 0 && <div style={{ color: '#8C7B6D', fontSize: 14 }}>{t('Нет услуг в этом городе', 'Бұл қалада қызмет жоқ')}</div>}
+                        <div style={{ borderTop: '1px solid rgba(212,196,176,0.6)', background: 'var(--surface-2)', padding: 10, display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflowY: 'auto' }}>
+                          {loadingCat === catKey && <div style={{ color: 'var(--ink-3)', fontSize: 14 }}>{t('Загрузка…', 'Жүктелуде…')}</div>}
+                          {loadingCat !== catKey && items.length === 0 && <div style={{ color: 'var(--ink-3)', fontSize: 14 }}>{t('Нет услуг в этом городе', 'Бұл қалада қызмет жоқ')}</div>}
                           {items.map((item) => {
                             const sel = isSelected(catKey, item);
                             const cost = catalogItemCost(item, cfg.costField);
@@ -325,10 +328,10 @@ export default function NewEvent() {
                             return (
                               <div key={item.id} style={{ background: '#fff', border: sel ? '1px solid #B08D57' : '1px solid #E5D9C8', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontWeight: 600, fontSize: 14, color: '#4A3F35', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{catalogItemName(item)}</div>
-                                  <div style={{ fontSize: 12, color: '#8C7B6D' }}>{cost ? `${fmt(cost)} ₸` : t('Цена не указана', 'Бағасы көрсетілмеген')}{item.district ? ` · ${item.district}` : ''}</div>
+                                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{catalogItemName(item)}</div>
+                                  <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{cost ? `${fmt(cost)} ₸` : t('Цена не указана', 'Бағасы көрсетілмеген')}{item.district ? ` · ${item.district}` : ''}</div>
                                   <button type="button" onClick={() => setDetail({ catKey, item })}
-                                    style={{ border: 'none', background: 'none', color: '#B08D57', cursor: 'pointer', fontSize: 12, fontWeight: 600, padding: '2px 0 0' }}>
+                                    style={{ border: 'none', background: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 12, fontWeight: 600, padding: '2px 0 0' }}>
                                     ⓘ {t('Подробнее', 'Толығырақ')}
                                   </button>
                                 </div>
@@ -341,7 +344,7 @@ export default function NewEvent() {
                                 )}
                                 <button type="button" onClick={() => toggle(catKey, item)}
                                   style={{ padding: '7px 12px', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
-                                    background: sel ? '#FCEBEB' : '#4A3F35', color: sel ? '#A33' : '#F5F0E9', whiteSpace: 'nowrap' }}>
+                                    background: sel ? 'var(--danger-bg)' : 'var(--ink)', color: sel ? 'var(--danger)' : 'var(--on-brand)', whiteSpace: 'nowrap' }}>
                                   {sel ? t('Убрать', 'Алып тастау') : t('Добавить', 'Қосу')}
                                 </button>
                               </div>
@@ -357,19 +360,19 @@ export default function NewEvent() {
           </>
         )}
 
-        {error && <div style={{ color: '#A33', background: '#FCEBEB', padding: 10, borderRadius: 10, fontSize: 14 }}>{error}</div>}
+        {error && <div role="alert" aria-live="polite" style={{ color: 'var(--danger)', background: 'var(--danger-bg)', padding: 10, borderRadius: 10, fontSize: 14 }}>{error}</div>}
       </div>
 
       {/* Итоги + submit (только на этапе результата) */}
       {phase === 'results' && (
-        <div style={{ position: 'sticky', bottom: 0, marginTop: 16, background: '#fff', borderTop: '1px solid rgba(212,196,176,0.7)', padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', gap: 16, fontSize: 14, flexWrap: 'wrap' }}>
-            <span style={{ color: '#6B5A4D' }}>{t('Выбрано', 'Таңдалды')}: <b>{selected.length}</b></span>
-            <span style={{ color: '#6B5A4D' }}>{t('Сумма', 'Сома')}: <b>{fmt(totalCost)} ₸</b></span>
-            <span style={{ color: remain < 0 ? '#A33' : '#3A7' }}>{t('Остаток', 'Қалдық')}: <b>{fmt(remain)} ₸</b></span>
+        <div style={{ position: 'sticky', bottom: 0, marginTop: 16, background: 'var(--bg)', borderTop: '1px solid var(--line-2)', padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 16, fontSize: 14, flexWrap: 'wrap', fontWeight: 600 }}>
+            <span style={{ color: 'var(--ink-2)' }}>{t('Выбрано', 'Таңдалды')}: <b style={{ color: 'var(--ink)' }}>{selected.length}</b></span>
+            <span style={{ color: 'var(--ink-2)' }}>{t('Сумма', 'Сома')}: <b style={{ color: 'var(--ink)' }}>{fmt(totalCost)} ₸</b></span>
+            <span style={{ color: remain < 0 ? 'var(--danger)' : 'var(--ok)' }}>{t('Остаток', 'Қалдық')}: <b>{fmt(remain)} ₸</b></span>
           </div>
           <button type="button" onClick={onSubmit} disabled={busy}
-            style={{ padding: '14px', borderRadius: 999, background: '#4A3F35', color: '#F5F0E9', fontWeight: 700, fontSize: 16, border: 'none', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1 }}>
+            style={{ padding: '15px', borderRadius: 'var(--r-pill)', background: 'var(--brand)', color: 'var(--on-brand)', fontWeight: 800, fontSize: 16, border: 'none', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1, boxShadow: 'var(--shadow)' }}>
             {busy ? t('Создание…', 'Жасалуда…') : t('Создать мероприятие', 'Іс-шара жасау')}
           </button>
         </div>
@@ -390,17 +393,17 @@ export default function NewEvent() {
               style={{ background: '#fff', borderRadius: 18, maxWidth: 520, width: '100%', margin: 'auto', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, padding: '16px 18px 0' }}>
                 <div>
-                  <div style={{ fontSize: 12, color: '#8C7B6D', fontWeight: 600 }}>{cfg.icon} {lang === 'kz' ? cfg.kz : cfg.ru}</div>
-                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#4A3F35', margin: '2px 0 0' }}>{catalogItemName(item)}</h3>
+                  <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600 }}>{cfg.icon} {lang === 'kz' ? cfg.kz : cfg.ru}</div>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--ink)', margin: '2px 0 0' }}>{catalogItemName(item)}</h3>
                 </div>
-                <button type="button" onClick={() => setDetail(null)} style={{ border: 'none', background: 'none', color: '#8C7B6D', cursor: 'pointer', fontSize: 24, lineHeight: 1 }}>×</button>
+                <button type="button" onClick={() => setDetail(null)} style={{ border: 'none', background: 'none', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 24, lineHeight: 1 }}>×</button>
               </div>
 
               <div style={{ padding: '12px 18px 18px' }}>
-                {cost > 0 && <div style={{ color: '#B08D57', fontWeight: 800, fontSize: 18, marginBottom: 12 }}>{fmt(cost)} ₸</div>}
+                {cost > 0 && <div style={{ color: 'var(--accent)', fontWeight: 800, fontSize: 18, marginBottom: 12 }}>{fmt(cost)} ₸</div>}
 
                 {/* Медиа */}
-                {detailLoadingMedia && <div style={{ color: '#8C7B6D', fontSize: 14, marginBottom: 12 }}>{t('Загрузка фото…', 'Фото жүктелуде…')}</div>}
+                {detailLoadingMedia && <div style={{ color: 'var(--ink-3)', fontSize: 14, marginBottom: 12 }}>{t('Загрузка фото…', 'Фото жүктелуде…')}</div>}
                 {!detailLoadingMedia && detailMedia.length > 0 && (
                   <div style={{ display: 'grid', gridTemplateColumns: detailMedia.length === 1 ? '1fr' : 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10, marginBottom: 14 }}>
                     {detailMedia.map((m, i) => (
@@ -414,19 +417,19 @@ export default function NewEvent() {
                   </div>
                 )}
                 {!detailLoadingMedia && detailMedia.length === 0 && (
-                  <div style={{ background: '#F5F0E9', borderRadius: 12, padding: '20px', textAlign: 'center', color: '#A99', fontSize: 36, marginBottom: 14 }}>{cfg.icon}</div>
+                  <div style={{ background: 'var(--on-brand)', borderRadius: 12, padding: '20px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 36, marginBottom: 14 }}>{cfg.icon}</div>
                 )}
 
-                {desc && <p style={{ color: '#6B5A4D', lineHeight: 1.6, fontSize: 14, marginBottom: 14, whiteSpace: 'pre-line' }}>{desc}</p>}
+                {desc && <p style={{ color: 'var(--ink-2)', lineHeight: 1.6, fontSize: 14, marginBottom: 14, whiteSpace: 'pre-line' }}>{desc}</p>}
 
                 {specs.length > 0 && (
                   <div style={{ border: '1px solid rgba(212,196,176,0.5)', borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
                     {specs.map(([label, value, href], i) => (
-                      <div key={label + i} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '9px 14px', borderTop: i ? '1px solid rgba(212,196,176,0.4)' : 'none' }}>
-                        <span style={{ color: '#8C7B6D', fontSize: 13 }}>{label}</span>
+                      <div key={label + i} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '9px 14px', borderTop: i ? '1px solid var(--line)' : 'none' }}>
+                        <span style={{ color: 'var(--ink-3)', fontSize: 13 }}>{label}</span>
                         {href
-                          ? <a href={href} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, fontSize: 13, textAlign: 'right', color: '#B08D57', wordBreak: 'break-all' }}>{value}</a>
-                          : <span style={{ fontWeight: 600, fontSize: 13, textAlign: 'right', color: '#4A3F35' }}>{value}</span>}
+                          ? <a href={href} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, fontSize: 13, textAlign: 'right', color: 'var(--accent)', wordBreak: 'break-all' }}>{value}</a>
+                          : <span style={{ fontWeight: 600, fontSize: 13, textAlign: 'right', color: 'var(--ink)' }}>{value}</span>}
                       </div>
                     ))}
                   </div>
@@ -434,7 +437,7 @@ export default function NewEvent() {
 
                 <button type="button" onClick={() => { toggle(detail.catKey, item); setDetail(null); }}
                   style={{ width: '100%', padding: '13px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer',
-                    background: sel ? '#FCEBEB' : '#4A3F35', color: sel ? '#A33' : '#F5F0E9' }}>
+                    background: sel ? 'var(--danger-bg)' : 'var(--ink)', color: sel ? 'var(--danger)' : 'var(--on-brand)' }}>
                   {sel ? t('Убрать из подбора', 'Таңдаудан алу') : t('Добавить в подбор', 'Таңдауға қосу')}
                 </button>
               </div>
@@ -478,7 +481,7 @@ const lightboxNav = (side) => ({
 });
 
 const col = { display: 'flex', flexDirection: 'column', gap: 6 };
-const lbl = { fontSize: 13, fontWeight: 600, color: '#6B5A4D' };
-const inp = { padding: '12px 14px', borderRadius: 12, border: '1px solid #D4C4B0', fontSize: 16, color: '#4A3F35', background: '#fff', width: '100%', boxSizing: 'border-box' };
-const stepBtn = { width: 28, height: 28, borderRadius: 8, border: '1px solid #D4C4B0', background: '#fff', color: '#4A3F35', fontSize: 16, cursor: 'pointer', lineHeight: 1 };
-const linkBtn = { border: 'none', background: 'none', color: '#B08D57', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 };
+const lbl = { fontSize: 13, fontWeight: 700, color: 'var(--ink-2)' };
+const inp = { padding: '13px 14px', borderRadius: 'var(--r-sm)', border: '1px solid var(--line-2)', fontSize: 16, color: 'var(--ink)', background: 'var(--surface)', width: '100%', boxSizing: 'border-box' };
+const stepBtn = { width: 32, height: 32, borderRadius: 'var(--r-sm)', border: '1px solid var(--line-2)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 16, cursor: 'pointer', lineHeight: 1 };
+const linkBtn = { border: 'none', background: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 13, fontWeight: 700, padding: 0 };

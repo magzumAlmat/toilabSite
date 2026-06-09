@@ -8,13 +8,16 @@ import Link from 'next/link';
 import { useApp } from './AppContext';
 import { register } from './apiClient';
 
-export default function RegisterForm({ heading, subtitle, loginRedirect }) {
+export default function RegisterForm({ heading, subtitle, loginRedirect, compact }) {
   const { t } = useApp();
   const [form, setForm] = useState({ email: '', password: '', phone: '', name: '', lastname: '' });
   const [role, setRole] = useState('client'); // client | supplier
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  // В compact-режиме необязательные поля (телефон/имя/фамилия) скрыты под раскрытием —
+  // первый шаг короче (email + пароль). Обязательны только email и пароль.
+  const [showMore, setShowMore] = useState(false);
 
   const upd = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const loginHref = loginRedirect ? `/app/login?redirect=${encodeURIComponent(loginRedirect)}` : '/app/login';
@@ -76,13 +79,23 @@ export default function RegisterForm({ heading, subtitle, loginRedirect }) {
       <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Field label="Email" type="email" value={form.email} onChange={upd('email')} required autoComplete="email" />
         <Field label={t('Пароль', 'Құпиясөз')} type="password" value={form.password} onChange={upd('password')} required autoComplete="new-password" />
-        <Field label={t('Телефон', 'Телефон')} type="tel" value={form.phone} onChange={upd('phone')} autoComplete="tel" />
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Field label={t('Имя', 'Аты')} value={form.name} onChange={upd('name')} autoComplete="given-name" />
-          <Field label={t('Фамилия', 'Тегі')} value={form.lastname} onChange={upd('lastname')} autoComplete="family-name" />
-        </div>
 
-        {error && <div style={{ color: '#A33', background: '#FCEBEB', padding: 10, borderRadius: 10, fontSize: 14 }}>{error}</div>}
+        {(!compact || showMore) ? (
+          <>
+            <Field label={`${t('Телефон', 'Телефон')} (${t('необязательно', 'міндетті емес')})`} type="tel" value={form.phone} onChange={upd('phone')} autoComplete="tel" />
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Field label={t('Имя', 'Аты')} value={form.name} onChange={upd('name')} autoComplete="given-name" />
+              <Field label={t('Фамилия', 'Тегі')} value={form.lastname} onChange={upd('lastname')} autoComplete="family-name" />
+            </div>
+          </>
+        ) : (
+          <button type="button" onClick={() => setShowMore(true)}
+            style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 700, fontSize: 14, cursor: 'pointer', padding: 0 }}>
+            + {t('Добавить имя и телефон', 'Аты мен телефон қосу')}
+          </button>
+        )}
+
+        {error && <div role="alert" aria-live="polite" style={{ color: 'var(--danger)', background: 'var(--danger-bg)', padding: 10, borderRadius: 10, fontSize: 14 }}>{error}</div>}
 
         <button type="submit" disabled={busy}
           style={{ padding: '14px', borderRadius: 999, background: '#4A3F35', color: '#F5F0E9', fontWeight: 700, fontSize: 16, border: 'none', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1 }}>

@@ -1,7 +1,7 @@
 // app/(site)/about/page.js — страница «О нас» (бывшая главная: маркетинговый лендинг).
 'use client';
 
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Download, ChevronDown, Search, Star, Calendar, Wallet, MessageCircle, Smartphone, ArrowRight, Zap, Heart, Users } from 'lucide-react';
 import { LangContext } from '../layout';
@@ -58,13 +58,50 @@ export default function Home() {
   const { lang } = useContext(LangContext);
   const t = lang === 'ru' ? ru : kz;
   const [hoveredFeature, setHoveredFeature] = useState(null);
+  const [activeSection, setActiveSection] = useState('features');
 
   const scrollToFeatures = () => {
     document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Scroll-spy: подсвечиваем активную секцию в навигации по секциям.
+  useEffect(() => {
+    const ids = ['features', 'benefits', 'screenshots', 'download'];
+    const els = ids.map((id) => document.getElementById(id)).filter(Boolean);
+    if (!els.length) return;
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) setActiveSection(e.target.id); }),
+      { rootMargin: '-45% 0px -50% 0px' },
+    );
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+
   return (
     <>
+      {/* НАВИГАЦИЯ ПО СЕКЦИЯМ — чтобы легко просматривать длинную страницу */}
+      <nav style={{ position: 'sticky', top: 72, zIndex: 30 }}>
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="tl-noscroll" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 0', justifyContent: 'center' }}>
+            {t.sections.map((s) => {
+              const active = activeSection === s.id;
+              return (
+                <a key={s.id} href={`#${s.id}`} aria-current={active ? 'true' : undefined}
+                  style={{
+                    padding: '8px 16px', borderRadius: 'var(--r-pill)', fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap', textDecoration: 'none',
+                    background: active ? 'var(--brand)' : 'rgba(255,255,255,0.9)',
+                    color: active ? '#fff' : 'var(--ink-2)',
+                    border: '1px solid var(--line)', boxShadow: 'var(--shadow-sm)', backdropFilter: 'blur(6px)',
+                    transition: 'background .2s ease, color .2s ease',
+                  }}>
+                  {s.label}
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+
       {/* HERO SECTION */}
       <section className="pt-20 md:pt-32 pb-16 md:pb-32 px-4 bg-gradient-to-b from-[#F5F0E9] to-[#E8DED3]">
         <div className="max-w-6xl mx-auto">
@@ -148,7 +185,7 @@ export default function Home() {
       </section>
 
       {/* FEATURES SECTION */}
-      <section id="features" className="py-20 md:py-32 bg-gradient-to-b from-[#4A3F35] to-[#3A3028] text-[#F5F0E9] px-4">
+      <section id="features" style={{ scrollMarginTop: 130 }} className="py-20 md:py-32 bg-gradient-to-b from-[#4A3F35] to-[#3A3028] text-[#F5F0E9] px-4">
         <div className="max-w-6xl mx-auto">
           <FadeIn className="text-center mb-16 md:mb-20">
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6">{t.features.title}</h2>
@@ -188,7 +225,7 @@ export default function Home() {
       </section>
 
       {/* BENEFITS SECTION */}
-      <section className="py-20 md:py-32 bg-gradient-to-b from-[#E8DED3] to-[#F5F0E9] px-4">
+      <section id="benefits" style={{ scrollMarginTop: 130 }} className="py-20 md:py-32 bg-gradient-to-b from-[#E8DED3] to-[#F5F0E9] px-4">
         <div className="max-w-6xl mx-auto">
           <FadeIn><h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-center mb-16 md:mb-20 text-[#4A3F35]">{t.benefits.title}</h2></FadeIn>
 
@@ -211,7 +248,7 @@ export default function Home() {
       </section>
 
       {/* SCREENSHOTS SECTION */}
-      <section className="py-20 md:py-32 bg-gradient-to-b from-[#F5F0E9] to-[#E8DED3] px-4">
+      <section id="screenshots" style={{ scrollMarginTop: 130 }} className="py-20 md:py-32 bg-gradient-to-b from-[#F5F0E9] to-[#E8DED3] px-4">
         <div className="max-w-6xl mx-auto text-center">
           <FadeIn>
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 md:mb-8 text-[#4A3F35]">{t.screenshots.title}</h2>
@@ -234,7 +271,7 @@ export default function Home() {
       </section>
 
       {/* CTA SECTION */}
-      <section className="py-20 md:py-32 bg-gradient-to-br from-[#4A3F35] via-[#5A4A3F] to-[#3A3028] text-[#F5F0E9] px-4">
+      <section id="download" style={{ scrollMarginTop: 130 }} className="py-20 md:py-32 bg-gradient-to-br from-[#4A3F35] via-[#5A4A3F] to-[#3A3028] text-[#F5F0E9] px-4">
         <FadeIn className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 md:mb-8">{t.cta.title}</h2>
           <p className="text-xl md:text-2xl mb-12 md:mb-16 opacity-90 leading-relaxed whitespace-pre-line">{t.cta.subtitle}</p>
@@ -278,6 +315,12 @@ export default function Home() {
 
 // Тексты главной
 const ru = {
+  sections: [
+    { id: 'features', label: 'Возможности' },
+    { id: 'benefits', label: 'Преимущества' },
+    { id: 'screenshots', label: 'Скриншоты' },
+    { id: 'download', label: 'Скачать' },
+  ],
   hero: {
     title: ["Пусть", "каждое мероприятие", "будет особенным!"],
     subtitle: "Toilab — всё для Вашего мероприятия в одном приложении: ресторан, фотограф, ведущий, фейерверк, рассрочка и многое другое.",
@@ -329,6 +372,12 @@ const ru = {
 
 
 const kz = {
+  sections: [
+    { id: 'features', label: 'Мүмкіндіктер' },
+    { id: 'benefits', label: 'Артықшылықтар' },
+    { id: 'screenshots', label: 'Скриншоттар' },
+    { id: 'download', label: 'Жүктеу' },
+  ],
   hero: {
     title: ["Әрбір Той", "Ерекше", "Болсын!"],
     subtitle: "Toilab — тойға қажетті барлық нәрсе бір қолданбада; фотограф, жүргізуші, фейерверк, бөліп төлеу және тағы басқа.",

@@ -41,15 +41,21 @@ export const EVENT_TYPE_BY_KEY = Object.fromEntries(EVENT_TYPES.map((e) => [e.ke
 
 // Человекочитаемое имя записи каталога (поля различаются между ресурсами).
 export function catalogItemName(item) {
+  if (!item) return '';
+  // Транспорт: авто из салона (/api/transport-vehicles) — модель · тип — салон.
+  if (item.carName) {
+    const salon = item.transport?.salonName || item.salonName;
+    const head = item.carName + (item.carType ? ` · ${item.carType}` : '');
+    return salon ? `${head} — ${salon}` : head;
+  }
   return (
-    item?.name ||
-    item?.teamName ||
-    item?.companyName ||
-    item?.studioName ||
-    item?.carName ||
-    [item?.salonName || item?.storeName, item?.flowerName || item?.itemName].filter(Boolean).join(' — ') ||
-    item?.salonName || item?.storeName ||
-    `#${item?.id ?? ''}`
+    item.name ||
+    item.teamName ||
+    item.companyName ||
+    item.studioName ||
+    [item.salonName || item.storeName, item.flowerName || item.itemName].filter(Boolean).join(' — ') ||
+    item.salonName || item.storeName ||
+    `#${item.id ?? ''}`
   );
 }
 

@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useApp } from '../../_lib/AppContext';
 import { fetchList, createWedding, getFiles } from '../../_lib/apiClient';
 import {
-  EVENT_TYPES, EVENT_TYPE_BY_KEY, EVENT_CATEGORIES,
+  EVENT_TYPES, EVENT_TYPE_BY_KEY, EVENT_CATEGORIES, WEB_EXCLUDED_CATEGORIES,
   catalogItemName, catalogItemCost, buildItemsAndTotals, buildWeddingPayload,
   recommendSelection, fmt,
 } from '../../_lib/events';
@@ -118,7 +118,8 @@ export default function NewEvent() {
 
   // Автоподбор: по одной услуге в каждой категории под доли бюджета.
   const runAutoPick = useCallback(async () => {
-    const cats = EVENT_TYPE_BY_KEY[typeKey].categories;
+    const allCats = EVENT_TYPE_BY_KEY[typeKey].categories;
+    const cats = allCats.filter((c) => !WEB_EXCLUDED_CATEGORIES.has(c));
     const map = { ...cacheRef.current };
     await Promise.all(cats.map(async (c) => {
       if (map[c]) return;
@@ -178,8 +179,13 @@ export default function NewEvent() {
     <div style={{ maxWidth: 640, margin: '8px auto', paddingBottom: phase === 'results' ? 90 : 24 }}>
       <style>{`@keyframes tlspin{to{transform:rotate(360deg)}}`}</style>
       <Link href="/app/events" style={{ color: 'var(--ink-2)', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>← {t('Мои мероприятия', 'Менің іс-шараларым')}</Link>
-      <h1 style={{ fontSize: 28, fontWeight: 900, margin: '10px 0 2px', color: 'var(--ink)' }}>{t('Новое мероприятие', 'Жаңа іс-шара')}</h1>
-      <p style={{ color: 'var(--ink-2)', fontSize: 15, margin: '0 0 16px' }}>{t('Укажите бюджет и число гостей — услуги подберём автоматически.', 'Бюджет пен қонақ санын көрсетіңіз — қызметтерді автоматты таңдаймыз.')}</p>
+      <div className="tl-dark tl-grid" style={{ position: 'relative', overflow: 'hidden', borderRadius: 'var(--r-lg)', padding: '22px 22px', margin: '10px 0 18px', boxShadow: 'var(--shadow-lg)' }}>
+        <div style={{ position: 'relative' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--gold)', marginBottom: 8 }}>{t('НОВОЕ МЕРОПРИЯТИЕ', 'ЖАҢА ІС-ШАРА')}</div>
+          <h1 className="tl-display" style={{ fontSize: 'clamp(22px,3.6vw,30px)', fontWeight: 800, color: 'var(--on-dark)', lineHeight: 1.1, marginBottom: 6 }}>{t('Соберём ваш той', 'Тойыңызды жинаймыз')}</h1>
+          <p style={{ color: 'var(--on-dark-2)', fontSize: 14, maxWidth: 440 }}>{t('Укажите бюджет и число гостей — услуги подберём автоматически.', 'Бюджет пен қонақ санын көрсетіңіз — қызметтерді автоматты таңдаймыз.')}</p>
+        </div>
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* ── Карточка параметров ── */}
@@ -304,9 +310,16 @@ export default function NewEvent() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {evType.categories.map((catKey) => {
                   const cfg = EVENT_CATEGORIES[catKey];
+                  const excluded = WEB_EXCLUDED_CATEGORIES.has(catKey);
                   const count = selected.filter((s) => s.catKey === catKey).length;
                   const items = cache[catKey] || [];
                   const open = openCat === catKey;
+                  if (excluded) return (
+                    <div key={catKey} style={{ border: '1px solid var(--line)', borderRadius: 12, opacity: 0.6, padding: '12px 14px', background: 'var(--surface-2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink-3)' }}>{cfg.icon} {lang === 'kz' ? cfg.kz : cfg.ru}</span>
+                      <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600 }}>📱 {t('Только в приложении', 'Тек қосымшада')}</span>
+                    </div>
+                  );
                   return (
                     <div key={catKey} style={{ border: '1px solid rgba(212,196,176,0.6)', borderRadius: 12, overflow: 'hidden' }}>
                       <button type="button" onClick={() => openCategory(catKey)}

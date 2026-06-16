@@ -192,15 +192,19 @@ export default function EventDetail() {
     <div style={{ maxWidth: 640, margin: '8px auto' }}>
       <Link href="/app/events" style={{ color: '#6B5A4D', textDecoration: 'none', fontSize: 14 }}>← {t('Мои мероприятия', 'Менің іс-шараларым')}</Link>
 
-      {/* Шапка */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, margin: '10px 0 4px' }}>
-        <h1 style={{ fontSize: 26, fontWeight: 800 }}>{ev.name || t('Без названия', 'Атаусыз')}</h1>
-        <div style={{ display: 'flex', gap: 12, whiteSpace: 'nowrap' }}>
-          <button onClick={() => setEditing((v) => !v)} style={linkBtn}>{t('Изменить', 'Өзгерту')}</button>
-          <button onClick={onDelete} style={{ ...linkBtn, color: '#A33' }}>{t('Удалить', 'Жою')}</button>
+      {/* Шапка — тёплый баннер */}
+      <div className="tl-dark tl-grid" style={{ position: 'relative', overflow: 'hidden', borderRadius: 'var(--r-lg)', padding: '22px 22px', margin: '10px 0 18px', boxShadow: 'var(--shadow-lg)' }}>
+        <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0 }}>
+            <h1 className="tl-display" style={{ fontSize: 'clamp(22px,3.6vw,30px)', fontWeight: 800, color: 'var(--on-dark)', lineHeight: 1.1 }}>{ev.name || t('Без названия', 'Атаусыз')}</h1>
+            {ev.date && <div style={{ color: 'var(--on-dark-2)', fontSize: 14, marginTop: 4 }}>{ev.date}</div>}
+          </div>
+          <div style={{ display: 'flex', gap: 10, whiteSpace: 'nowrap' }}>
+            <button onClick={() => setEditing((v) => !v)} style={{ background: 'rgba(255,255,255,0.14)', color: 'var(--on-dark)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 'var(--r-pill)', padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{t('Изменить', 'Өзгерту')}</button>
+            <button onClick={onDelete} style={{ background: 'rgba(255,255,255,0.12)', color: '#F3C9C0', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 'var(--r-pill)', padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{t('Удалить', 'Жою')}</button>
+          </div>
         </div>
       </div>
-      <div style={{ color: '#8C7B6D', fontSize: 14, marginBottom: 14 }}>{ev.date || ''}</div>
 
       {editing && (
         <div style={{ background: '#FAF6F0', border: '1px solid #E5D9C8', borderRadius: 12, padding: 14, marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>

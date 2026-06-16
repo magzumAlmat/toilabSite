@@ -109,6 +109,10 @@ export const CATEGORY_WEIGHTS = {
   'photo-video': 8, fireworks: 7, suvenirs: 4, typography: 3, equipment: 7,
 };
 
+// Категории, исключённые из веб-автоподбора: на вебе нет механики номеров/ночей/дней
+// и бронирования инвентаря — цена считается неверно, резервация не создаётся.
+export const WEB_EXCLUDED_CATEGORIES = new Set(['hotels', 'transport']);
+
 // Автоподбор: по одной услуге в каждой категории под целевую долю бюджета.
 // catalogByCat: { catKey: items[] }. Возвращает selected: [{ catKey, item, quantity }].
 export function recommendSelection({ categories, budget, guestCount, catalogByCat }) {

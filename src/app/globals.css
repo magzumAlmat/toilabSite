@@ -100,6 +100,11 @@ body {
 .tl-noscroll { scrollbar-width: none; -ms-overflow-style: none; }
 .tl-noscroll::-webkit-scrollbar { display: none; }
 
+/* Skeleton-шиммер (загрузка) */
+@keyframes tl-shimmer { 0% { background-position: -468px 0 } 100% { background-position: 468px 0 } }
+.tl-skel { background: #EFE7DA; background-image: linear-gradient(90deg, #EFE7DA 0px, #F7F1E7 200px, #EFE7DA 400px); background-size: 900px 100%; animation: tl-shimmer 1.4s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .tl-skel { animation: none } }
+
 /* ─── Премиум-направление (Вариант 1): display-заголовки, золото, эффекты ─── */
 .tl-display { font-family: var(--font-display); letter-spacing: -0.022em; }
 

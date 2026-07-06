@@ -317,6 +317,7 @@ export default function NewEvent() {
                               {s.booking.rooms
                                 ? `${s.booking.rooms.length} ${t('номеров', 'бөлме')} × ${s.booking.nights} ${t('ночей', 'түн')}`
                                 : `${s.booking.vehicles.length} ${t('авто', 'көлік')} × ${s.booking.days} ${t('дней', 'күн')}`}
+                              {s.booking.startDate ? ` · ${t('с', 'бастап')} ${s.booking.startDate.split('-').reverse().join('.')}` : ''}
                             </span>
                             <button type="button" onClick={() => setPicker({ catKey: s.catKey, item: s.item })}
                               style={{ border: 'none', background: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 12, fontWeight: 600, padding: 0 }}>

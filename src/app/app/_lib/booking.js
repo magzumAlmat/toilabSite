@@ -28,8 +28,10 @@ export async function checkBookingConflicts(selected, dateISO, t) {
   const conflicts = [];
   const jobs = [];
   for (const s of selected) {
+    // Начало брони: выбранная в пикере дата (заезд/начало аренды) или дата мероприятия.
+    const startISO = s.booking?.startDate || dateISO;
     if (s.booking?.rooms?.length) {
-      const [ci, co] = roomRange(dateISO, s.booking.nights);
+      const [ci, co] = roomRange(startISO, s.booking.nights);
       for (const r of s.booking.rooms) {
         jobs.push(
           checkRoomAvailability(r.id, ci, co)
@@ -43,7 +45,7 @@ export async function checkBookingConflicts(selected, dateISO, t) {
       }
     }
     if (s.booking?.vehicles?.length) {
-      const [sd, ed] = vehicleRange(dateISO, s.booking.days);
+      const [sd, ed] = vehicleRange(startISO, s.booking.days);
       for (const v of s.booking.vehicles) {
         jobs.push(
           checkVehicleAvailability(v.id, sd, ed)
@@ -68,8 +70,9 @@ export async function createBookingsForWedding(selected, dateISO, weddingId) {
   const failures = [];
   for (const s of selected) {
     const parentId = s.item.companyId || s.item.id;
+    const startISO = s.booking?.startDate || dateISO; // дата из пикера приоритетнее
     if (s.booking?.rooms?.length) {
-      const [checkInDate, checkOutDate] = roomRange(dateISO, s.booking.nights);
+      const [checkInDate, checkOutDate] = roomRange(startISO, s.booking.nights);
       for (const r of s.booking.rooms) {
         try {
           await createRoomBooking({ roomId: r.id, hotelId: parentId, checkInDate, checkOutDate, source: 'walk_in', notes });
@@ -79,7 +82,7 @@ export async function createBookingsForWedding(selected, dateISO, weddingId) {
       }
     }
     if (s.booking?.vehicles?.length) {
-      const [startDate, endDate] = vehicleRange(dateISO, s.booking.days);
+      const [startDate, endDate] = vehicleRange(startISO, s.booking.days);
       for (const v of s.booking.vehicles) {
         try {
           await createTransportBooking({ vehicleId: v.id, transportId: parentId, rentalType: 'daily', startDate, endDate, notes });

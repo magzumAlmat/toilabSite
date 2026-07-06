@@ -46,6 +46,17 @@ function DurationStepper({ value, setValue, label }) {
   );
 }
 
+// Календарь начала брони (заезд / начало аренды). По умолчанию — дата мероприятия.
+function StartDateInput({ label, value, onChange }) {
+  return (
+    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink-2)', fontWeight: 600 }}>
+      📅 {label}
+      <input type="date" value={value} onChange={(e) => onChange(e.target.value)}
+        style={{ padding: '8px 10px', borderRadius: 10, border: '1px solid var(--line-2)', fontSize: 14, color: 'var(--ink)', background: 'var(--surface)' }} />
+    </label>
+  );
+}
+
 // Строка подпозиции (номер/авто) с чекбоксом и статусом занятости.
 function SubItemRow({ name, price, priceLabel, chips, selected, busyStatus, onToggle, t }) {
   const isBusy = busyStatus === false; // false = занято; undefined/null = неизвестно
@@ -77,6 +88,7 @@ export function RoomPickerModal({ hotel, date, initial, onSave, onClose, t }) {
   const [loading, setLoading] = useState(true);
   const [sel, setSel] = useState(() => new Map((initial?.rooms || []).map((r) => [r.id, r])));
   const [nights, setNights] = useState(Math.max(1, parseInt(initial?.nights, 10) || 1));
+  const [start, setStart] = useState(initial?.startDate || date || ''); // дата заезда
   const [avail, setAvail] = useState({}); // { roomId: boolean }
   const availSeq = useRef(0);
 
@@ -89,14 +101,14 @@ export function RoomPickerModal({ hotel, date, initial, onSave, onClose, t }) {
     return () => { on = false; };
   }, [hotel.id]);
 
-  // Проверка занятости на [date, date+nights) — как в моб. checkBookingConflicts.
+  // Проверка занятости на [заезд, заезд+nights) — как в моб. checkBookingConflicts.
   useEffect(() => {
-    if (!date || !rooms.length) return;
+    if (!start || !rooms.length) return;
     const seq = ++availSeq.current;
-    const co = addDaysISO(date, nights);
+    const co = addDaysISO(start, nights);
     const timer = setTimeout(() => {
       rooms.forEach((r) => {
-        checkRoomAvailability(r.id, date, co)
+        checkRoomAvailability(r.id, start, co)
           .then((res) => {
             if (availSeq.current !== seq) return;
             const ok = res?.data?.available;
@@ -106,7 +118,7 @@ export function RoomPickerModal({ hotel, date, initial, onSave, onClose, t }) {
       });
     }, 350);
     return () => clearTimeout(timer);
-  }, [rooms, date, nights]);
+  }, [rooms, start, nights]);
 
   const toggle = (r) => setSel((m) => { const n = new Map(m); if (n.has(r.id)) n.delete(r.id); else n.set(r.id, r); return n; });
   const chosen = useMemo(() => [...sel.values()], [sel]);
@@ -116,11 +128,12 @@ export function RoomPickerModal({ hotel, date, initial, onSave, onClose, t }) {
     <PickerModal title={catalogItemName(hotel)} subtitle={t('Выберите номера и количество ночей', 'Бөлмелер мен түн санын таңдаңыз')} loading={loading} onClose={onClose}
       footer={
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <StartDateInput label={t('Заезд', 'Кіру күні')} value={start} onChange={setStart} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
             <DurationStepper value={nights} setValue={setNights} label={t('ночей', 'түн')} />
             <span style={{ fontSize: 14, color: 'var(--ink-2)' }}>{t('Итого', 'Барлығы')}: <b style={{ color: 'var(--ink)', fontSize: 16 }}>{fmt(perNight * nights)} ₸</b></span>
           </div>
-          <button type="button" disabled={!chosen.length} onClick={() => onSave({ rooms: chosen, nights })}
+          <button type="button" disabled={!chosen.length} onClick={() => onSave({ rooms: chosen, nights, startDate: start })}
             style={{ padding: '13px', borderRadius: 999, background: chosen.length ? 'var(--brand)' : 'var(--surface-3)', color: chosen.length ? 'var(--on-brand)' : 'var(--ink-3)', fontWeight: 800, fontSize: 15, border: 'none', cursor: chosen.length ? 'pointer' : 'default' }}>
             {chosen.length ? `${t('Выбрать', 'Таңдау')} · ${chosen.length}` : t('Выберите номера', 'Бөлмелерді таңдаңыз')}
           </button>
@@ -145,6 +158,7 @@ export function VehiclePickerModal({ salon, date, initial, onSave, onClose, t })
   const [loading, setLoading] = useState(!preloaded);
   const [sel, setSel] = useState(() => new Map((initial?.vehicles || []).map((v) => [v.id, v])));
   const [days, setDays] = useState(Math.max(1, parseInt(initial?.days, 10) || 1));
+  const [start, setStart] = useState(initial?.startDate || date || ''); // начало аренды
   const [avail, setAvail] = useState({}); // { vehicleId: boolean }
   const availSeq = useRef(0);
 
@@ -158,14 +172,14 @@ export function VehiclePickerModal({ salon, date, initial, onSave, onClose, t })
     return () => { on = false; };
   }, [salon.id, preloaded]);
 
-  // Занятость на [date, date+days-1] — как в моб. checkBookingConflicts.
+  // Занятость на [начало, начало+days-1] — как в моб. checkBookingConflicts.
   useEffect(() => {
-    if (!date || !vehicles.length) return;
+    if (!start || !vehicles.length) return;
     const seq = ++availSeq.current;
-    const end = addDaysISO(date, Math.max(0, days - 1));
+    const end = addDaysISO(start, Math.max(0, days - 1));
     const timer = setTimeout(() => {
       vehicles.forEach((v) => {
-        checkVehicleAvailability(v.id, date, end)
+        checkVehicleAvailability(v.id, start, end)
           .then((res) => {
             if (availSeq.current !== seq) return;
             const ok = res?.isAvailable;
@@ -175,7 +189,7 @@ export function VehiclePickerModal({ salon, date, initial, onSave, onClose, t })
       });
     }, 350);
     return () => clearTimeout(timer);
-  }, [vehicles, date, days]);
+  }, [vehicles, start, days]);
 
   const toggle = (v) => setSel((m) => { const n = new Map(m); if (n.has(v.id)) n.delete(v.id); else n.set(v.id, v); return n; });
   const chosen = useMemo(() => [...sel.values()], [sel]);
@@ -185,11 +199,12 @@ export function VehiclePickerModal({ salon, date, initial, onSave, onClose, t })
     <PickerModal title={catalogItemName(salon)} subtitle={t('Выберите авто и количество дней', 'Көлік пен күн санын таңдаңыз')} loading={loading} onClose={onClose}
       footer={
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <StartDateInput label={t('Начало аренды', 'Жалдау басталуы')} value={start} onChange={setStart} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
             <DurationStepper value={days} setValue={setDays} label={t('дней', 'күн')} />
             <span style={{ fontSize: 14, color: 'var(--ink-2)' }}>{t('Итого', 'Барлығы')}: <b style={{ color: 'var(--ink)', fontSize: 16 }}>{fmt(perDay * days)} ₸</b></span>
           </div>
-          <button type="button" disabled={!chosen.length} onClick={() => onSave({ vehicles: chosen, days })}
+          <button type="button" disabled={!chosen.length} onClick={() => onSave({ vehicles: chosen, days, startDate: start })}
             style={{ padding: '13px', borderRadius: 999, background: chosen.length ? 'var(--brand)' : 'var(--surface-3)', color: chosen.length ? 'var(--on-brand)' : 'var(--ink-3)', fontWeight: 800, fontSize: 15, border: 'none', cursor: chosen.length ? 'pointer' : 'default' }}>
             {chosen.length ? `${t('Выбрать', 'Таңдау')} · ${chosen.length}` : t('Выберите авто', 'Көлікті таңдаңыз')}
           </button>

@@ -8,14 +8,16 @@ import Link from 'next/link';
 import { useApp } from '../../_lib/AppContext';
 import { fetchList, createWedding, getFiles } from '../../_lib/apiClient';
 import {
-  EVENT_TYPES, EVENT_TYPE_BY_KEY, EVENT_CATEGORIES, WEB_EXCLUDED_CATEGORIES,
+  EVENT_TYPES, EVENT_TYPE_BY_KEY, EVENT_CATEGORIES, BOOKING_CATEGORIES,
   catalogItemName, catalogItemCost, buildItemsAndTotals, buildWeddingPayload,
-  recommendSelection, fmt,
+  bookingCost, recommendSelection, fmt,
 } from '../../_lib/events';
+import { checkBookingConflicts, createBookingsForWedding } from '../../_lib/booking';
+import { RoomPickerModal, VehiclePickerModal } from '../../_lib/BookingPickers';
 import { getSpecs, FILE_SEGMENT, fileUrl } from '../../_lib/catalogFields';
 
-// Сегмент файлов для категории мероприятия (у транспорта — авто).
-const fileSegmentFor = (catKey) => (catKey === 'transport' ? 'transport-vehicle' : FILE_SEGMENT[catKey]);
+// Сегмент файлов для категории мероприятия (транспорт — салон, как в каталоге).
+const fileSegmentFor = (catKey) => FILE_SEGMENT[catKey];
 
 const asArray = (res) => (Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : []);
 // Часть эндпоинтов не фильтрует по городу — фильтруем на клиенте.
@@ -47,6 +49,7 @@ export default function NewEvent() {
   const [manual, setManual] = useState(false);    // правили выбор вручную
   const [phase, setPhase] = useState('idle');     // 'idle' | 'loading' | 'results'
   const [detail, setDetail] = useState(null);     // { catKey, item } — модалка «Подробнее»
+  const [picker, setPicker] = useState(null);     // { catKey, item } — выбор номеров/авто
   const [detailMedia, setDetailMedia] = useState([]);
   const [detailLoadingMedia, setDetailLoadingMedia] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState(null); // индекс увеличенного фото/видео
@@ -108,6 +111,20 @@ export default function NewEvent() {
     setSelected((sel) => sel.map((s) => (keyOf(s.catKey, s.item) === k ? { ...s, quantity: Math.max(1, q) } : s)));
   };
 
+  // Сохранение выбора номеров/авто из пикера: upsert позиции с booking-данными.
+  const savePicker = (booking) => {
+    if (!picker) return;
+    setManual(true);
+    const k = keyOf(picker.catKey, picker.item);
+    setSelected((sel) => [
+      ...sel.filter((s) => keyOf(s.catKey, s.item) !== k),
+      { catKey: picker.catKey, item: picker.item, quantity: 1, booking },
+    ]);
+    setPicker(null);
+  };
+  const bookingOf = (catKey, item) =>
+    selected.find((s) => keyOf(s.catKey, s.item) === keyOf(catKey, item))?.booking;
+
   const changeType = (key) => {
     setTypeKey(key);
     setOpenCat(null);
@@ -119,7 +136,8 @@ export default function NewEvent() {
   // Автоподбор: по одной услуге в каждой категории под доли бюджета.
   const runAutoPick = useCallback(async () => {
     const allCats = EVENT_TYPE_BY_KEY[typeKey].categories;
-    const cats = allCats.filter((c) => !WEB_EXCLUDED_CATEGORIES.has(c));
+    // Номера/авто автоподбор не трогает (как в моб. app — всегда вручную).
+    const cats = allCats.filter((c) => !BOOKING_CATEGORIES.has(c));
     const map = { ...cacheRef.current };
     await Promise.all(cats.map(async (c) => {
       if (map[c]) return;
@@ -156,8 +174,22 @@ export default function NewEvent() {
     setBusy(true);
     setError('');
     try {
+      // 1. Занятость номеров/авто ДО создания — при конфликте прерываем (как в моб.).
+      const conflicts = await checkBookingConflicts(selected, date, t);
+      if (conflicts.length) {
+        setError(`${t('Занято на выбранную дату', 'Таңдалған күнге бос емес')}: ${conflicts.join('; ')}`);
+        setBusy(false);
+        return;
+      }
+      // 2. Создание мероприятия.
       const payload = buildWeddingPayload({ name, date, hostId: user?.id, budget, selected, guestCount: guests });
-      await createWedding(payload);
+      const res = await createWedding(payload);
+      // 3. Брони номеров/авто + блок даты ресторана (best-effort, как в моб.).
+      const weddingId = res?.id ?? res?.wedding?.id ?? res?.data?.id;
+      const failures = await createBookingsForWedding(selected, date, weddingId);
+      if (failures.length) {
+        alert(`${t('Мероприятие создано, но не все брони прошли', 'Іс-шара жасалды, бірақ кейбір брондар өтпеді')}: ${failures.join(', ')}`);
+      }
       router.push('/app/events');
     } catch (err) {
       setError(err.message || t('Не удалось создать', 'Жасау мүмкін болмады'));
@@ -261,9 +293,11 @@ export default function NewEvent() {
                 </div>
                 {selected.map((s) => {
                   const cfg = EVENT_CATEGORIES[s.catKey];
+                  const isBooking = !!s.booking;
                   const unit = catalogItemCost(s.item, cfg.costField);
-                  const isGuestQty = s.catKey === 'restaurants' || s.catKey === 'hotels';
+                  const isGuestQty = !isBooking && (s.catKey === 'restaurants' || s.catKey === 'hotels');
                   const qty = isGuestQty ? (parseInt(guests, 10) || 1) : s.quantity;
+                  const rowTotal = isBooking ? bookingCost(s.booking) : unit * qty;
                   return (
                     <div key={keyOf(s.catKey, s.item)} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '8px 0', borderTop: '1px solid var(--line)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -271,23 +305,39 @@ export default function NewEvent() {
                           {cfg.icon} {catalogItemName(s.item)}
                         </span>
                         <span style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <b style={{ color: 'var(--ink)', fontSize: 13 }}>{fmt(unit * qty)} ₸</b>
+                          <b style={{ color: 'var(--ink)', fontSize: 13 }}>{fmt(rowTotal)} ₸</b>
                           <button type="button" onClick={() => toggle(s.catKey, s.item)} title={t('Удалить', 'Жою')}
                             style={{ border: 'none', background: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
                         </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--ink-3)' }}>
-                        <span>{fmt(unit)} ₸ ×</span>
-                        {isGuestQty ? (
-                          <span><b>{qty}</b> {t('гостей', 'қонақ')}</span>
+                        {isBooking ? (
+                          <>
+                            <span>
+                              {s.booking.rooms
+                                ? `${s.booking.rooms.length} ${t('номеров', 'бөлме')} × ${s.booking.nights} ${t('ночей', 'түн')}`
+                                : `${s.booking.vehicles.length} ${t('авто', 'көлік')} × ${s.booking.days} ${t('дней', 'күн')}`}
+                            </span>
+                            <button type="button" onClick={() => setPicker({ catKey: s.catKey, item: s.item })}
+                              style={{ border: 'none', background: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 12, fontWeight: 600, padding: 0 }}>
+                              {t('Изменить', 'Өзгерту')}
+                            </button>
+                          </>
                         ) : (
                           <>
-                            <button type="button" onClick={() => setQty(s.catKey, s.item, qty - 1)} style={stepBtn}>−</button>
-                            <input type="number" inputMode="numeric" min={1} value={s.quantity}
-                              onChange={(e) => setQty(s.catKey, s.item, parseInt(e.target.value, 10) || 1)}
-                              style={{ width: 56, padding: '6px 8px', borderRadius: 8, border: '1px solid #D4C4B0', fontSize: 14, color: 'var(--ink)', textAlign: 'center' }} />
-                            <button type="button" onClick={() => setQty(s.catKey, s.item, qty + 1)} style={stepBtn}>+</button>
-                            <span>{t('шт', 'дана')}</span>
+                            <span>{fmt(unit)} ₸ ×</span>
+                            {isGuestQty ? (
+                              <span><b>{qty}</b> {t('гостей', 'қонақ')}</span>
+                            ) : (
+                              <>
+                                <button type="button" onClick={() => setQty(s.catKey, s.item, qty - 1)} style={stepBtn}>−</button>
+                                <input type="number" inputMode="numeric" min={1} value={s.quantity}
+                                  onChange={(e) => setQty(s.catKey, s.item, parseInt(e.target.value, 10) || 1)}
+                                  style={{ width: 56, padding: '6px 8px', borderRadius: 8, border: '1px solid #D4C4B0', fontSize: 14, color: 'var(--ink)', textAlign: 'center' }} />
+                                <button type="button" onClick={() => setQty(s.catKey, s.item, qty + 1)} style={stepBtn}>+</button>
+                                <span>{t('шт', 'дана')}</span>
+                              </>
+                            )}
                           </>
                         )}
                         <button type="button" onClick={() => setDetail({ catKey: s.catKey, item: s.item })}
@@ -310,16 +360,10 @@ export default function NewEvent() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {evType.categories.map((catKey) => {
                   const cfg = EVENT_CATEGORIES[catKey];
-                  const excluded = WEB_EXCLUDED_CATEGORIES.has(catKey);
+                  const isBookingCat = BOOKING_CATEGORIES.has(catKey); // отель/салон → пикер
                   const count = selected.filter((s) => s.catKey === catKey).length;
                   const items = cache[catKey] || [];
                   const open = openCat === catKey;
-                  if (excluded) return (
-                    <div key={catKey} style={{ border: '1px solid var(--line)', borderRadius: 12, opacity: 0.6, padding: '12px 14px', background: 'var(--surface-2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink-3)' }}>{cfg.icon} {lang === 'kz' ? cfg.kz : cfg.ru}</span>
-                      <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600 }}>📱 {t('Только в приложении', 'Тек қосымшада')}</span>
-                    </div>
-                  );
                   return (
                     <div key={catKey} style={{ border: '1px solid rgba(212,196,176,0.6)', borderRadius: 12, overflow: 'hidden' }}>
                       <button type="button" onClick={() => openCategory(catKey)}
@@ -338,28 +382,49 @@ export default function NewEvent() {
                             const cost = catalogItemCost(item, cfg.costField);
                             const selEntry = selected.find((s) => keyOf(s.catKey, s.item) === keyOf(catKey, item));
                             const isGuestQty = catKey === 'restaurants' || catKey === 'hotels';
+                            const bk = selEntry?.booking;
                             return (
                               <div key={item.id} style={{ background: '#fff', border: sel ? '1px solid #B08D57' : '1px solid #E5D9C8', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{catalogItemName(item)}</div>
-                                  <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{cost ? `${fmt(cost)} ₸` : t('Цена не указана', 'Бағасы көрсетілмеген')}{item.district ? ` · ${item.district}` : ''}</div>
+                                  <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+                                    {isBookingCat
+                                      ? (bk
+                                        ? `${(bk.rooms || bk.vehicles).length} ${bk.rooms ? t('номеров', 'бөлме') : t('авто', 'көлік')} · ${fmt(bookingCost(bk))} ₸`
+                                        : (catKey === 'hotels' ? t('Выбор номеров и ночей', 'Бөлмелер мен түндер таңдауы') : t('Выбор авто и дней', 'Көлік пен күндер таңдауы')))
+                                      : <>{cost ? `${fmt(cost)} ₸` : t('Цена не указана', 'Бағасы көрсетілмеген')}{item.district ? ` · ${item.district}` : ''}</>}
+                                  </div>
                                   <button type="button" onClick={() => setDetail({ catKey, item })}
                                     style={{ border: 'none', background: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 12, fontWeight: 600, padding: '2px 0 0' }}>
                                     ⓘ {t('Подробнее', 'Толығырақ')}
                                   </button>
                                 </div>
-                                {sel && !isGuestQty && (
+                                {sel && !isBookingCat && !isGuestQty && (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                     <button type="button" onClick={() => setQty(catKey, item, (selEntry?.quantity || 1) - 1)} style={stepBtn}>−</button>
                                     <span style={{ minWidth: 20, textAlign: 'center', fontSize: 14 }}>{selEntry?.quantity || 1}</span>
                                     <button type="button" onClick={() => setQty(catKey, item, (selEntry?.quantity || 1) + 1)} style={stepBtn}>+</button>
                                   </div>
                                 )}
-                                <button type="button" onClick={() => toggle(catKey, item)}
-                                  style={{ padding: '7px 12px', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
-                                    background: sel ? 'var(--danger-bg)' : 'var(--ink)', color: sel ? 'var(--danger)' : 'var(--on-brand)', whiteSpace: 'nowrap' }}>
-                                  {sel ? t('Убрать', 'Алып тастау') : t('Добавить', 'Қосу')}
-                                </button>
+                                {isBookingCat ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <button type="button" onClick={() => setPicker({ catKey, item })}
+                                      style={{ padding: '7px 12px', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
+                                        background: sel ? 'var(--surface-2)' : 'var(--ink)', color: sel ? 'var(--ink)' : 'var(--on-brand)', whiteSpace: 'nowrap' }}>
+                                      {sel ? t('Изменить', 'Өзгерту') : (catKey === 'hotels' ? t('Выбрать номера', 'Бөлме таңдау') : t('Выбрать авто', 'Көлік таңдау'))}
+                                    </button>
+                                    {sel && (
+                                      <button type="button" onClick={() => toggle(catKey, item)} title={t('Убрать', 'Алып тастау')}
+                                        style={{ padding: '7px 10px', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', background: 'var(--danger-bg)', color: 'var(--danger)' }}>×</button>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <button type="button" onClick={() => toggle(catKey, item)}
+                                    style={{ padding: '7px 12px', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
+                                      background: sel ? 'var(--danger-bg)' : 'var(--ink)', color: sel ? 'var(--danger)' : 'var(--on-brand)', whiteSpace: 'nowrap' }}>
+                                    {sel ? t('Убрать', 'Алып тастау') : t('Добавить', 'Қосу')}
+                                  </button>
+                                )}
                               </div>
                             );
                           })}
@@ -448,11 +513,18 @@ export default function NewEvent() {
                   </div>
                 )}
 
-                <button type="button" onClick={() => { toggle(detail.catKey, item); setDetail(null); }}
-                  style={{ width: '100%', padding: '13px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer',
-                    background: sel ? 'var(--danger-bg)' : 'var(--ink)', color: sel ? 'var(--danger)' : 'var(--on-brand)' }}>
-                  {sel ? t('Убрать из подбора', 'Таңдаудан алу') : t('Добавить в подбор', 'Таңдауға қосу')}
-                </button>
+                {BOOKING_CATEGORIES.has(detail.catKey) ? (
+                  <button type="button" onClick={() => { setDetail(null); setPicker({ catKey: detail.catKey, item }); }}
+                    style={{ width: '100%', padding: '13px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', background: 'var(--ink)', color: 'var(--on-brand)' }}>
+                    {detail.catKey === 'hotels' ? t('Выбрать номера', 'Бөлме таңдау') : t('Выбрать авто', 'Көлік таңдау')}
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => { toggle(detail.catKey, item); setDetail(null); }}
+                    style={{ width: '100%', padding: '13px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer',
+                      background: sel ? 'var(--danger-bg)' : 'var(--ink)', color: sel ? 'var(--danger)' : 'var(--on-brand)' }}>
+                    {sel ? t('Убрать из подбора', 'Таңдаудан алу') : t('Добавить в подбор', 'Таңдауға қосу')}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -482,6 +554,16 @@ export default function NewEvent() {
             {detailMedia.length > 1 && <div style={{ color: '#fff', fontSize: 13, opacity: 0.8 }}>{lightboxIdx + 1} / {detailMedia.length}</div>}
           </div>
         </div>
+      )}
+
+      {/* Пикеры бронирования: отель → номера → ночи / салон → авто → дни */}
+      {picker?.catKey === 'hotels' && (
+        <RoomPickerModal hotel={picker.item} date={date} initial={bookingOf(picker.catKey, picker.item)}
+          onSave={savePicker} onClose={() => setPicker(null)} t={t} />
+      )}
+      {picker?.catKey === 'transport' && (
+        <VehiclePickerModal salon={picker.item} date={date} initial={bookingOf(picker.catKey, picker.item)}
+          onSave={savePicker} onClose={() => setPicker(null)} t={t} />
       )}
     </div>
   );

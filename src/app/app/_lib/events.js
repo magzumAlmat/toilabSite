@@ -14,7 +14,9 @@ export const EVENT_CATEGORIES = {
   program:            { type: 'program',        costField: 'cost',        list: '/api/program',              ru: 'Шоу-программа',          kz: 'Шоу-бағдарлама',       icon: '🎭' },
   jewelry:            { type: 'jewelry',        costField: 'cost',        list: '/api/jewelry',              ru: 'Ювелирные изделия',     kz: 'Зергерлік бұйымдар',   icon: '💍' },
   'traditional-gift': { type: 'traditionalGift', costField: 'cost',       list: '/api/traditional-gift',     ru: 'Традиционные подарки',  kz: 'Дәстүрлі сыйлықтар',    icon: '🎀' },
-  transport:          { type: 'transport',      costField: 'pricePerDay', list: '/api/transport-vehicles',   ru: 'Прокат авто',           kz: 'Көлік жалдау',         icon: '🚗' },
+  // Транспорт: список — САЛОНЫ (/api/transport, как в моб. app); конкретные авто
+  // и дни выбираются в VehiclePickerModal, цена = Σ(pricePerDay)×дни.
+  transport:          { type: 'transport',      costField: 'pricePerDay', list: '/api/transport',            ru: 'Прокат авто',           kz: 'Көлік жалдау',         icon: '🚗' },
   clothing:           { type: 'clothing',       costField: 'cost',        list: '/api/clothing',             ru: 'Одежда',                kz: 'Киім',                 icon: '👗' },
   hotels:             { type: 'hotel',          costField: 'averageCost', list: '/api/hotels',               ru: 'Гостиницы',             kz: 'Қонақ үйлер',          icon: '🏨' },
   'photo-video':      { type: 'photo-video',    costField: 'cost',        list: '/api/photo-video-services', ru: 'Фото / видео',          kz: 'Фото / видео',         icon: '📸' },
@@ -72,11 +74,42 @@ export function effectiveQuantity(catKey, quantity, guestCount) {
   return parseInt(quantity, 10) || 1;
 }
 
+// Стоимость booking-позиции (номера × ночи / авто × дни) — формулы моб. app.
+export function bookingCost(booking) {
+  if (booking?.rooms?.length) {
+    const nights = Math.max(1, parseInt(booking.nights, 10) || 1);
+    return booking.rooms.reduce((s, r) => s + (parseFloat(r.price) || 0), 0) * nights;
+  }
+  if (booking?.vehicles?.length) {
+    const days = Math.max(1, parseInt(booking.days, 10) || 1);
+    return booking.vehicles.reduce((s, v) => s + (parseFloat(v.pricePerDay ?? v.cost ?? v.price) || 0), 0) * days;
+  }
+  return 0;
+}
+
 // Сборка позиций items[] и подсчёт итогов из выбранных услуг.
-// selected: [{ catKey, item, quantity }]
+// selected: [{ catKey, item, quantity, booking? }]; booking (отель/салон):
+// { rooms: [...], nights } | { vehicles: [...], days } → в payload идут room_ids
+// (для транспорта — id авто в том же поле, как в моб. app), quantity = число
+// номеров / число дней (контракт моб. HomeScreen L3006-3026).
 export function buildItemsAndTotals(selected, guestCount) {
-  const items = selected.map(({ catKey, item, quantity }) => {
+  const items = selected.map(({ catKey, item, quantity, booking }) => {
     const cfg = EVENT_CATEGORIES[catKey];
+    if (booking?.rooms?.length) {
+      return {
+        id: item.companyId || item.id, type: cfg.type,
+        quantity: booking.rooms.length || 1, totalCost: bookingCost(booking),
+        room_ids: booking.rooms.map((r) => r.id),
+      };
+    }
+    if (booking?.vehicles?.length) {
+      const days = Math.max(1, parseInt(booking.days, 10) || 1);
+      return {
+        id: item.companyId || item.id, type: cfg.type,
+        quantity: days, totalCost: bookingCost(booking),
+        room_ids: booking.vehicles.map((v) => v.id),
+      };
+    }
     const cost = catalogItemCost(item, cfg.costField);
     const qty = effectiveQuantity(catKey, quantity, guestCount);
     return { id: item.companyId || item.id, type: cfg.type, quantity: qty, totalCost: cost * qty };
@@ -109,9 +142,10 @@ export const CATEGORY_WEIGHTS = {
   'photo-video': 8, fireworks: 7, suvenirs: 4, typography: 3, equipment: 7,
 };
 
-// Категории, исключённые из веб-автоподбора: на вебе нет механики номеров/ночей/дней
-// и бронирования инвентаря — цена считается неверно, резервация не создаётся.
-export const WEB_EXCLUDED_CATEGORIES = new Set(['hotels', 'transport']);
+// Категории с двухуровневым бронированием (отель→номера→ночи, салон→авто→дни).
+// Исключены из автоподбора (номера/авто всегда выбираются вручную — как в моб. app),
+// добавляются через RoomPickerModal / VehiclePickerModal.
+export const BOOKING_CATEGORIES = new Set(['hotels', 'transport']);
 
 // Автоподбор: по одной услуге в каждой категории под целевую долю бюджета.
 // catalogByCat: { catKey: items[] }. Возвращает selected: [{ catKey, item, quantity }].
@@ -159,7 +193,8 @@ export const ITEM_TYPE_META = {
   traditionalGift:     { ru: 'Традиционные подарки', kz: 'Дәстүрлі сыйлықтар', icon: '🎀', detail: (id) => `/api/traditional-gift/${id}`, seg: 'traditionalgift' },
   'traditional-gifts': { ru: 'Традиционные подарки', kz: 'Дәстүрлі сыйлықтар', icon: '🎀', detail: (id) => `/api/traditional-gift/${id}`, seg: 'traditionalgift' },
   clothing:     { ru: 'Одежда',               kz: 'Киім',                icon: '👗', detail: (id) => `/api/clothing/${id}`, seg: 'clothing' },
-  transport:    { ru: 'Прокат авто',          kz: 'Көлік жалдау',        icon: '🚗', detail: (id) => `/api/transport-vehicles/${id}`, seg: 'transport-vehicle' },
+  // id в items — САЛОН (как в моб. payload), поэтому деталь — /api/transport/{id}.
+  transport:    { ru: 'Прокат авто',          kz: 'Көлік жалдау',        icon: '🚗', detail: (id) => `/api/transport/${id}`, seg: 'transport' },
   'photo-video': { ru: 'Фото / видео',        kz: 'Фото / видео',        icon: '📸', detail: (id) => `/api/photo-video-services/${id}`, seg: 'photo-video-service' },
   suvenir:      { ru: 'Сувениры',             kz: 'Кәдесыйлар',          icon: '🎁', detail: (id) => `/api/suvenirs/${id}`, seg: 'suvenirs' },
   typography:   { ru: 'Типография',           kz: 'Типография',          icon: '🖨️', detail: (id) => `/api/typography/${id}`, seg: 'typography' },

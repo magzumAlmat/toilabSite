@@ -121,6 +121,28 @@ export const updateWeddingRemainingBalance = (id, remaining_balance) =>
 export const updateWeddingPaidAmount = (id, paid_amount) =>
   client.patch(`/api/weddings/${id}/paid_amount`, { paid_amount }).then((r) => r.data);
 
+// ── Бронирование номеров/авто (контракты из моб. api.js) ─────────
+// Номера отеля: GET /api/rooms/hotels/{hotelId}/rooms.
+export const getRoomsByHotel = (hotelId) =>
+  client.get(`/api/rooms/hotels/${hotelId}/rooms`).then((r) => r.data);
+// Занятость номера на [checkIn, checkOut): ответ { data: { available } }.
+export const checkRoomAvailability = (roomId, checkInDate, checkOutDate) =>
+  client.get(`/api/room-availability/check/availability?roomId=${roomId}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`).then((r) => r.data);
+// Бронь номера после создания мероприятия (source/notes — как в моб. app).
+export const createRoomBooking = (data) =>
+  client.post('/api/room-availability/', data).then((r) => r.data);
+// Авто салона: GET /api/transport-vehicles?transportId={id}.
+export const getVehiclesByTransportId = (transportId) =>
+  client.get(`/api/transport-vehicles?transportId=${transportId}`).then((r) => r.data);
+// Занятость авто на [start, end]: ответ { isAvailable }.
+export const checkVehicleAvailability = (vehicleId, startDate, endDate) =>
+  client.get(`/api/transport-availability/check/availability?vehicleId=${vehicleId}&startDate=${startDate}&endDate=${endDate}`).then((r) => r.data);
+export const createTransportBooking = (data) =>
+  client.post('/api/transport-availability/', data).then((r) => r.data);
+// Блок даты ресторана после создания мероприятия.
+export const blockRestaurantDate = (restaurantId, date) =>
+  client.post('/api/block', { restaurantId, date }).then((r) => r.data);
+
 // ── Wishlist мероприятия (список подарков) ───────────────────────
 // Позиция ссылается на товар (good_id). Кастомный подарок: сначала создать good.
 export const createGood = (data) => client.post('/api/goods', data).then((r) => r.data);

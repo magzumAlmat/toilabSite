@@ -70,12 +70,20 @@ export function AppProvider({ children }) {
     setUser(null);
   }, []);
 
+  // Перезагрузить данные пользователя (после редактирования профиля).
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await getUser();
+      setUser(res?.user || res);
+    } catch { /* не критично */ }
+  }, []);
+
   const value = {
     city, setCity,
     lang, setLang,
     token, user, ready,
     isAuth: !!token,
-    signIn, signOut,
+    signIn, signOut, refreshUser,
     // t(ru, kz?) — на русском возвращает ru; на казахском: явный kz, иначе перевод из словаря, иначе ru.
     t: (ru, kz) => (lang === 'ru' ? ru : (kz || translations[ru] || ru)),
     // tr(value) — перевод значения данных (район/кухня/тип…) на текущий язык.

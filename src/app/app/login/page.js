@@ -68,7 +68,10 @@ function LoginForm() {
         </button>
       </form>
 
-      <p style={{ marginTop: 18, color: '#6B5A4D', fontSize: 14 }}>
+      <p style={{ marginTop: 14, fontSize: 14 }}>
+        <Link href="/app/forgot-password" style={{ color: '#B08D57' }}>{t('Забыли пароль?', 'Құпиясөзді ұмыттыңыз ба?')}</Link>
+      </p>
+      <p style={{ marginTop: 10, color: '#6B5A4D', fontSize: 14 }}>
         {t('Нет аккаунта?', 'Аккаунт жоқ па?')} <Link href="/app/register" style={{ color: '#B08D57' }}>{t('Регистрация', 'Тіркелу')}</Link>
       </p>
       <p style={{ marginTop: 6, color: '#6B5A4D', fontSize: 14 }}>

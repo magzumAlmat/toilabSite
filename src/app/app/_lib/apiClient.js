@@ -58,6 +58,17 @@ export const register = (data) =>
 export const getUser = () =>
   client.get('/api/auth/getAuthentificatedUserInfo').then((r) => r.data);
 
+// Сброс пароля: письмо со ссылкой (контракт из моб. RestorePasswordScreen).
+export const forgotPassword = (email) =>
+  client.post('/api/forgot-password', { email }).then((r) => r.data);
+
+// Профиль: имя/фамилия/телефон (контракт из моб. Item4Screen → addfullprofile).
+export const updateProfile = (data) =>
+  client.post('/api/auth/addfullprofile', data).then((r) => r.data);
+
+// Удаление аккаунта (DELETE без тела, как в моб. app).
+export const deleteAccount = () => client.delete('/api/profile').then((r) => r.data);
+
 // ── Универсальные методы каталога ────────────────────────────────
 export const fetchList = (path) => client.get(path).then((r) => r.data);
 export const fetchOne = (path) => client.get(path).then((r) => r.data);
@@ -105,6 +116,10 @@ export const updateWeddingTotalCost = (id, total_cost) =>
   client.patch(`/api/weddings/${id}/total_cost`, { total_cost }).then((r) => r.data);
 export const updateWeddingRemainingBalance = (id, remaining_balance) =>
   client.patch(`/api/weddings/${id}/remaining_balance`, { remaining_balance }).then((r) => r.data);
+// Трекер оплат (как в моб. Item3Screen): paid_amount — отдельное поле,
+// пересчёты остатка его не трогают (remaining_balance = budget − total_cost).
+export const updateWeddingPaidAmount = (id, paid_amount) =>
+  client.patch(`/api/weddings/${id}/paid_amount`, { paid_amount }).then((r) => r.data);
 
 // ── Wishlist мероприятия (список подарков) ───────────────────────
 // Позиция ссылается на товар (good_id). Кастомный подарок: сначала создать good.

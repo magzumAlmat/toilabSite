@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useApp } from '../../_lib/AppContext';
 import {
   getWedding, updateWedding, deleteWedding, deleteWeddingItem,
-  updateWeddingTotalCost, updateWeddingRemainingBalance, fetchOne, fetchList,
+  updateWeddingTotalCost, updateWeddingRemainingBalance, updateWeddingPaidAmount, fetchOne, fetchList,
   getWeddingWishlist, createWish, deleteWish,
 } from '../../_lib/apiClient';
 import { fmtMoney } from '../../_lib/catalogFields';
@@ -33,7 +33,7 @@ export default function EventDetail() {
   const [removingId, setRemovingId] = useState(null);
 
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', date: '', budget: '' });
+  const [form, setForm] = useState({ name: '', date: '', budget: '', paid: '' });
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [copied, setCopied] = useState(false);
@@ -65,7 +65,7 @@ export default function EventDetail() {
     try {
       const e = unwrap(await getWedding(id));
       setEv(e);
-      setForm({ name: e?.name || '', date: e?.date || '', budget: String(e?.budget ?? '') });
+      setForm({ name: e?.name || '', date: e?.date || '', budget: String(e?.budget ?? ''), paid: String(e?.paid_amount ?? '') });
       resolveNames(e);
       await loadWishlist();
     } catch (err) {
@@ -80,7 +80,16 @@ export default function EventDetail() {
   const saveEdit = async () => {
     setSavingEdit(true);
     try {
-      await updateWedding(id, { name: form.name.trim(), date: form.date, budget: parseFloat(form.budget) || 0 });
+      const newBudget = parseFloat(form.budget) || 0;
+      await updateWedding(id, { name: form.name.trim(), date: form.date, budget: newBudget });
+      // Трекер оплат + остаток — как в моб. Item3Screen: paid_amount отдельным
+      // PATCH; remaining_balance = budget − total_cost (paid_amount не участвует).
+      try {
+        const newPaid = parseFloat(form.paid) || 0;
+        if (newPaid !== (Number(ev?.paid_amount) || 0)) await updateWeddingPaidAmount(id, newPaid);
+        const totalNow = Number(ev?.total_cost) || 0;
+        await updateWeddingRemainingBalance(id, newBudget - totalNow);
+      } catch { /* не критично */ }
       setEditing(false);
       await load();
     } catch (err) {
@@ -182,6 +191,7 @@ export default function EventDetail() {
   }
 
   const budget = Number(ev.budget) || 0;
+  const paid = Number(ev.paid_amount) || 0;
   const total = Number(ev.total_cost) || items.reduce((s, x) => s + x.total, 0);
   const remain = ev.remaining_balance != null ? Number(ev.remaining_balance) : (budget - total);
   const pct = budget > 0 ? Math.min(100, Math.round((total / budget) * 100)) : (total > 0 ? 100 : 0);
@@ -215,6 +225,8 @@ export default function EventDetail() {
               <input type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} style={inp} /></label>
             <label style={{ ...col, flex: 1 }}><span style={lbl}>{t('Бюджет, ₸', 'Бюджет, ₸')}</span>
               <input type="number" value={form.budget} onChange={(e) => setForm((f) => ({ ...f, budget: e.target.value }))} style={inp} /></label>
+            <label style={{ ...col, flex: 1 }}><span style={lbl}>{t('Оплачено, ₸', 'Төленді, ₸')}</span>
+              <input type="number" inputMode="numeric" value={form.paid} onChange={(e) => setForm((f) => ({ ...f, paid: e.target.value }))} placeholder="0" style={inp} /></label>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={saveEdit} disabled={savingEdit} style={{ padding: '10px 18px', borderRadius: 999, background: '#4A3F35', color: '#F5F0E9', fontWeight: 700, border: 'none', cursor: 'pointer' }}>{savingEdit ? t('Сохранение…', 'Сақталуда…') : t('Сохранить', 'Сақтау')}</button>
@@ -281,6 +293,11 @@ export default function EventDetail() {
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
           <span style={{ color: '#6B5A4D' }}>{t('Потрачено', 'Жұмсалды')}: <b>{fmt(total)} ₸ ({pct}%)</b></span>
           <span style={{ color: over ? '#A33' : '#3A7' }}>{t('Остаток', 'Қалдық')}: <b>{fmt(remain)} ₸</b></span>
+        </div>
+        {/* Трекер оплат (как в моб. app): сколько уже фактически оплачено. */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginTop: 6, paddingTop: 8, borderTop: '1px solid var(--line)' }}>
+          <span style={{ color: '#6B5A4D' }}>{t('Оплачено', 'Төленді')}: <b style={{ color: '#4A3F35' }}>{fmt(paid)} ₸</b></span>
+          {total > 0 && <span style={{ color: '#8C7B6D' }}>{t('к оплате', 'төлеуге')}: <b>{fmt(Math.max(0, total - paid))} ₸</b></span>}
         </div>
       </div>
 

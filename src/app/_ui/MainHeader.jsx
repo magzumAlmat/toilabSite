@@ -40,10 +40,10 @@ export default function MainHeader() {
       )}
       {isAuth ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span title={user?.email || displayName} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, maxWidth: 160 }}>
+          <Link href="/app/profile" title={user?.email || displayName} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, maxWidth: 160, textDecoration: 'none' }}>
             <span aria-hidden style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 'var(--r-pill)', background: 'var(--surface-2)', color: 'var(--accent-600)', fontWeight: 900, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{initial}</span>
             <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</span>
-          </span>
+          </Link>
           <button onClick={signOut} style={btnGhost}>{isKz ? 'Шығу' : 'Выйти'}</button>
         </div>
       ) : (

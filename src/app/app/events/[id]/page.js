@@ -9,7 +9,7 @@ import { useApp } from '../../_lib/AppContext';
 import {
   getWedding, updateWedding, deleteWedding, deleteWeddingItem,
   updateWeddingTotalCost, updateWeddingRemainingBalance, updateWeddingPaidAmount, fetchOne, fetchList,
-  getWeddingWishlist, createWish, deleteWish,
+  getWeddingWishlist, createWish, deleteWish, createGood, getEntityId,
 } from '../../_lib/apiClient';
 import { fmtMoney } from '../../_lib/catalogFields';
 import { ITEM_TYPE_META, fmt } from '../../_lib/events';
@@ -42,6 +42,11 @@ export default function EventDetail() {
   const [goodsLoading, setGoodsLoading] = useState(false);
   const [goodsSearch, setGoodsSearch] = useState('');
   const [togglingGood, setTogglingGood] = useState(null);
+  // Свой подарок, которого нет в каталоге («всё не предусмотришь»):
+  // создаём good → добавляем его в wishlist.
+  const [customName, setCustomName] = useState('');
+  const [customPrice, setCustomPrice] = useState('');
+  const [addingCustom, setAddingCustom] = useState(false);
 
   const loadWishlist = useCallback(async () => {
     try { setWishlist(asArray(await getWeddingWishlist(id))); } catch { /* пусто */ }
@@ -147,6 +152,31 @@ export default function EventDetail() {
       alert(hostErr ? t('Управлять списком может только организатор', 'Тізімді тек ұйымдастырушы басқара алады') : (err.message || t('Не удалось', 'Қате')));
     } finally {
       setTogglingGood(null);
+    }
+  };
+
+  // Свой подарок: POST /api/goods (те же поля, что читает список: item_name/cost),
+  // затем createWish с новым good_id — как toggleGood, но с созданием товара.
+  const addCustomGood = async () => {
+    const name = customName.trim();
+    if (!name) return;
+    setAddingCustom(true);
+    try {
+      const cost = parseFloat(customPrice) || 0;
+      const res = await createGood({ item_name: name, cost });
+      const newId = getEntityId(res);
+      if (!newId) throw new Error(t('Не удалось создать подарок', 'Сыйлықты құру мүмкін болмады'));
+      await createWish({ event_id: Number(id), good_id: newId, event_type: 'wedding' });
+      await loadWishlist();
+      // Показываем созданный товар в списке модалки — сразу с пометкой «В списке ✓».
+      setGoods((gs) => [{ id: newId, item_name: name, cost }, ...gs]);
+      setCustomName('');
+      setCustomPrice('');
+    } catch (err) {
+      const hostErr = /host/i.test(err.message || '');
+      alert(hostErr ? t('Управлять списком может только организатор', 'Тізімді тек ұйымдастырушы басқара алады') : (err.message || t('Не удалось', 'Қате')));
+    } finally {
+      setAddingCustom(false);
     }
   };
 
@@ -390,6 +420,23 @@ export default function EventDetail() {
                     </div>
                   );
                 })}
+              </div>
+              {/* Свой подарок — если в каталоге нет нужного («всё не предусмотришь») */}
+              <div style={{ padding: '12px 18px 18px', borderTop: '1px solid var(--line, #E5D9C8)' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink, #4A3F35)', marginBottom: 8 }}>
+                  {t('Или добавьте свой подарок', 'Немесе өз сыйлығыңызды қосыңыз')}
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <input value={customName} onChange={(e) => setCustomName(e.target.value)}
+                    placeholder={t('Название', 'Атауы')} style={{ ...inp, flex: '2 1 160px', width: 'auto' }} />
+                  <input type="number" inputMode="numeric" min="0" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)}
+                    placeholder={t('Цена, ₸ (необязательно)', 'Бағасы, ₸ (міндетті емес)')} style={{ ...inp, flex: '1 1 140px', width: 'auto' }} />
+                  <button onClick={addCustomGood} disabled={addingCustom || !customName.trim()}
+                    style={{ padding: '10px 18px', borderRadius: 999, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap',
+                      background: 'var(--accent, #B08D57)', color: '#fff', opacity: addingCustom || !customName.trim() ? 0.6 : 1 }}>
+                    {addingCustom ? t('Добавление…', 'Қосылуда…') : t('Добавить своё', 'Өзімдікін қосу')}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -43,6 +43,7 @@ export default function NewEvent() {
   const [cache, setCache] = useState({});       // { catKey: items[] }
   const [loadingCat, setLoadingCat] = useState(null);
   const [selected, setSelected] = useState([]);  // [{ catKey, item, quantity }]
+  const [enabledCats, setEnabledCats] = useState(null); // null = все категории включены; Set — выбранные пользователем
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [autoNote, setAutoNote] = useState('');   // '' | 'ok' | 'over'
@@ -129,15 +130,28 @@ export default function NewEvent() {
     setTypeKey(key);
     setOpenCat(null);
     setManual(false); // новый тип — пересоберём автоматически
+    setEnabledCats(null); // у нового типа свои категории — снова «все включены»
     const allowed = new Set(EVENT_TYPE_BY_KEY[key].categories);
     setSelected((sel) => sel.filter((s) => allowed.has(s.catKey)));
   };
 
+  // Чипы «Какие услуги нужны?»: null → Set всех категорий типа, затем toggle.
+  const toggleCat = (catKey) => {
+    setEnabledCats((prev) => {
+      const next = new Set(prev ?? evType.categories);
+      if (next.has(catKey)) next.delete(catKey); else next.add(catKey);
+      return next;
+    });
+  };
+  const isCatEnabled = (catKey) => !enabledCats || enabledCats.has(catKey);
+
   // Автоподбор: по одной услуге в каждой категории под доли бюджета.
   const runAutoPick = useCallback(async () => {
     const allCats = EVENT_TYPE_BY_KEY[typeKey].categories;
-    // Номера/авто автоподбор не трогает (как в моб. app — всегда вручную).
-    const cats = allCats.filter((c) => !BOOKING_CATEGORIES.has(c));
+    // Номера/авто автоподбор не трогает (как в моб. app — всегда вручную) + только нужные пользователю категории.
+    const cats = allCats
+      .filter((c) => !BOOKING_CATEGORIES.has(c))
+      .filter((c) => !enabledCats || enabledCats.has(c));
     const map = { ...cacheRef.current };
     await Promise.all(cats.map(async (c) => {
       if (map[c]) return;
@@ -148,7 +162,7 @@ export default function NewEvent() {
     setSelected(sel);
     const { totalCost: tc } = buildItemsAndTotals(sel, guests);
     setAutoNote((parseFloat(budget) || 0) >= tc ? 'ok' : 'over');
-  }, [budget, guests, typeKey, city]);
+  }, [budget, guests, typeKey, city, enabledCats]);
 
   // Автозапуск: ввели бюджет и гостей → лоадер → подбор → результат (если не правили вручную).
   useEffect(() => {
@@ -214,7 +228,7 @@ export default function NewEvent() {
       <div className="tl-dark tl-grid" style={{ position: 'relative', overflow: 'hidden', borderRadius: 'var(--r-lg)', padding: '22px 22px', margin: '10px 0 18px', boxShadow: 'var(--shadow-lg)' }}>
         <div style={{ position: 'relative' }}>
           <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--gold)', marginBottom: 8 }}>{t('НОВОЕ МЕРОПРИЯТИЕ', 'ЖАҢА ІС-ШАРА')}</div>
-          <h1 className="tl-display" style={{ fontSize: 'clamp(22px,3.6vw,30px)', fontWeight: 800, color: 'var(--on-dark)', lineHeight: 1.1, marginBottom: 6 }}>{t('Соберём ваш той', 'Тойыңызды жинаймыз')}</h1>
+          <h1 className="tl-display" style={{ fontSize: 'clamp(22px,3.6vw,30px)', fontWeight: 800, color: 'var(--on-dark)', lineHeight: 1.1, marginBottom: 6 }}>{t('Соберём ваш той', 'Тойыңызды бюджетке сай қалыптастырамыз')}</h1>
           <p style={{ color: 'var(--on-dark-2)', fontSize: 14, maxWidth: 440 }}>{t('Укажите бюджет и число гостей — услуги подберём автоматически.', 'Бюджет пен қонақ санын көрсетіңіз — қызметтерді автоматты таңдаймыз.')}</p>
         </div>
       </div>
@@ -248,6 +262,25 @@ export default function NewEvent() {
             <input type="number" inputMode="numeric" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="0" style={inp} /></label>
           <label style={{ ...col, flex: '1 1 120px' }}><span style={lbl}>{t('Гостей', 'Қонақтар')}</span>
             <input type="number" inputMode="numeric" value={guests} onChange={(e) => setGuests(e.target.value)} placeholder="0" style={inp} /></label>
+        </div>
+
+        {/* Какие услуги нужны — чипы-переключатели категорий для автоподбора */}
+        <div>
+          <div style={lbl}>{t('Какие услуги нужны?', 'Қандай қызметтер керек?')}</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
+            {evType.categories.map((catKey) => {
+              const cfg = EVENT_CATEGORIES[catKey];
+              const on = isCatEnabled(catKey);
+              return (
+                <button type="button" key={catKey} onClick={() => toggleCat(catKey)} aria-pressed={on}
+                  style={{ padding: '9px 14px', borderRadius: 'var(--r-pill)', fontSize: 13, cursor: 'pointer', fontWeight: 700,
+                    border: on ? '1px solid var(--accent)' : '1px solid var(--line-2)', background: on ? 'var(--accent)' : 'var(--surface)',
+                    color: on ? '#fff' : 'var(--ink-2)', opacity: on ? 1 : 0.5, boxShadow: on ? 'var(--shadow-sm)' : 'none' }}>
+                  {cfg.icon} {lang === 'kz' ? cfg.kz : cfg.ru}
+                </button>
+              );
+            })}
+          </div>
         </div>
         <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t('Город', 'Қала')}: <b>{city || '—'}</b>. {t('Для ресторана и гостиницы количество = число гостей.', 'Мейрамхана мен қонақ үй үшін саны = қонақтар саны.')}</div>
         </div>
@@ -300,6 +333,9 @@ export default function NewEvent() {
                   const rowTotal = isBooking ? bookingCost(s.booking) : unit * qty;
                   return (
                     <div key={keyOf(s.catKey, s.item)} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '8px 0', borderTop: '1px solid var(--line)' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>
+                        {lang === 'kz' ? cfg.kz : cfg.ru}
+                      </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                         <span style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {cfg.icon} {catalogItemName(s.item)}
@@ -360,6 +396,7 @@ export default function NewEvent() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {evType.categories.map((catKey) => {
+                  if (!isCatEnabled(catKey)) return null; // выключено чипом «Какие услуги нужны?»
                   const cfg = EVENT_CATEGORIES[catKey];
                   const isBookingCat = BOOKING_CATEGORIES.has(catKey); // отель/салон → пикер
                   const count = selected.filter((s) => s.catKey === catKey).length;

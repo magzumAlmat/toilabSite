@@ -2,7 +2,7 @@
 'use client';
 
 import { useContext, useState } from 'react';
-import { Mail, Phone, MapPin, Send, Clock, Globe } from 'lucide-react';
+import { Mail, Phone, Send, Clock, Globe } from 'lucide-react';
 import { LangContext } from '../layout';
 
 export default function Contacts() {
@@ -63,15 +63,6 @@ export default function Contacts() {
               <p className="text-sm text-[#6B5A4D] mt-4 opacity-70">{t.phoneHours}</p>
             </div>
 
-            {/* Address Card */}
-            <div className="group bg-white rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border border-[#D4C4B0]/20">
-              <div className="mb-6 w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#8C7B6D]/20 to-[#A89A8F]/10 rounded-2xl flex items-center justify-center group-hover:from-[#8C7B6D]/30 group-hover:to-[#A89A8F]/20 transition-all duration-300">
-                <MapPin size={40} className="text-[#4A3F35] group-hover:text-[#8C7B6D] transition-colors" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-bold text-[#4A3F35] mb-3 md:mb-4">{t.address}</h3>
-              <p className="text-base md:text-lg text-[#6B5A4D] font-medium">{t.addressText}</p>
-              <p className="text-sm text-[#6B5A4D] mt-4 opacity-70">{t.addressCity}</p>
-            </div>
           </div>
 
           {/* Working Hours */}
@@ -186,9 +177,6 @@ const ru = {
   emailResponse: "Ответим в течение 24 часов",
   phone: "Телефон",
   phoneHours: "Пн-Пт: 9:00 - 18:00",
-  address: "Адрес",
-  addressText: "Алматы, ул. Абая 123, офис 45",
-  addressCity: "Республика Казахстан",
   workingHours: "Режим работы",
   weekday: "Пн-Пт",
   weekdayHours: "09:00 - 18:00",
@@ -232,9 +220,6 @@ const kz = {
   emailResponse: "24 сағат ішінде жауап береміз",
   phone: "Телефон",
   phoneHours: "Дс-Жм: 9:00 - 18:00",
-  address: "Мекенжай",
-  addressText: "Алматы, Абай көшесі 123, 45-кабинет",
-  addressCity: "Қазақстан Республикасы",
   workingHours: "Жұмыс уақыты",
   weekday: "Дс-Жм",
   weekdayHours: "09:00 - 18:00",

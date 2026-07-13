@@ -163,7 +163,8 @@ export default function EventDetail() {
     setAddingCustom(true);
     try {
       const cost = parseFloat(customPrice) || 0;
-      const res = await createGood({ item_name: name, cost });
+      // category обязателен на бэке («Категория и название товара обязательны»).
+      const res = await createGood({ category: 'Miscellaneous', item_name: name, cost });
       const newId = getEntityId(res);
       if (!newId) throw new Error(t('Не удалось создать подарок', 'Сыйлықты құру мүмкін болмады'));
       await createWish({ event_id: Number(id), good_id: newId, event_type: 'wedding' });

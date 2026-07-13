@@ -88,7 +88,6 @@ export default function AppHome() {
   if (!city) {
     return (
       <FadeIn style={{ maxWidth: 560, margin: '0 auto', textAlign: 'center', padding: '40px 0' }}>
-        <div style={{ fontSize: 56, marginBottom: 8 }}>🍲</div>
         <h1 style={{ fontSize: 30, fontWeight: 800, marginBottom: 8, color: '#4A3F35' }}>{t('Выберите город', 'Қаланы таңдаңыз')}</h1>
         <p style={{ color: '#6B5A4D', marginBottom: 28 }}>{t('Покажем услуги в вашем городе', 'Қалаңыздағы қызметтерді көрсетеміз')}</p>
         <StaggerGrid style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>

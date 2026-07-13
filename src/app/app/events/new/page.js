@@ -43,7 +43,7 @@ export default function NewEvent() {
   const [cache, setCache] = useState({});       // { catKey: items[] }
   const [loadingCat, setLoadingCat] = useState(null);
   const [selected, setSelected] = useState([]);  // [{ catKey, item, quantity }]
-  const [enabledCats, setEnabledCats] = useState(null); // null = все категории включены; Set — выбранные пользователем
+  const [enabledCats, setEnabledCats] = useState(() => new Set()); // пусто = система спрашивает, автоподбор ждёт выбора услуг
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [autoNote, setAutoNote] = useState('');   // '' | 'ok' | 'over'
@@ -130,20 +130,20 @@ export default function NewEvent() {
     setTypeKey(key);
     setOpenCat(null);
     setManual(false); // новый тип — пересоберём автоматически
-    setEnabledCats(null); // у нового типа свои категории — снова «все включены»
+    setEnabledCats(new Set()); // у нового типа свои категории — снова спрашиваем
     const allowed = new Set(EVENT_TYPE_BY_KEY[key].categories);
     setSelected((sel) => sel.filter((s) => allowed.has(s.catKey)));
   };
 
-  // Чипы «Какие услуги нужны?»: null → Set всех категорий типа, затем toggle.
+  // Чипы «Какие услуги нужны?»: по умолчанию НИЧЕГО не выбрано — подбор ждёт ответа.
   const toggleCat = (catKey) => {
     setEnabledCats((prev) => {
-      const next = new Set(prev ?? evType.categories);
+      const next = new Set(prev);
       if (next.has(catKey)) next.delete(catKey); else next.add(catKey);
       return next;
     });
   };
-  const isCatEnabled = (catKey) => !enabledCats || enabledCats.has(catKey);
+  const isCatEnabled = (catKey) => enabledCats.has(catKey);
 
   // Автоподбор: по одной услуге в каждой категории под доли бюджета.
   const runAutoPick = useCallback(async () => {
@@ -151,7 +151,7 @@ export default function NewEvent() {
     // Номера/авто автоподбор не трогает (как в моб. app — всегда вручную) + только нужные пользователю категории.
     const cats = allCats
       .filter((c) => !BOOKING_CATEGORIES.has(c))
-      .filter((c) => !enabledCats || enabledCats.has(c));
+      .filter((c) => enabledCats.has(c));
     const map = { ...cacheRef.current };
     await Promise.all(cats.map(async (c) => {
       if (map[c]) return;
@@ -164,10 +164,10 @@ export default function NewEvent() {
     setAutoNote((parseFloat(budget) || 0) >= tc ? 'ok' : 'over');
   }, [budget, guests, typeKey, city, enabledCats]);
 
-  // Автозапуск: ввели бюджет и гостей → лоадер → подбор → результат (если не правили вручную).
+  // Автозапуск: бюджет + гости + отмечены нужные услуги → лоадер → подбор → результат.
   useEffect(() => {
     if (manual) return;
-    if (!paramsValid) { setAutoNote(''); setPhase('idle'); return; }
+    if (!paramsValid || enabledCats.size === 0) { setAutoNote(''); setPhase('idle'); return; }
     const id = setTimeout(async () => {
       setPhase('loading');
       // минимальное время показа лоадера, чтобы не мигал
@@ -175,7 +175,7 @@ export default function NewEvent() {
       setPhase('results');
     }, 450);
     return () => clearTimeout(id);
-  }, [budget, guests, typeKey, manual, paramsValid, runAutoPick]);
+  }, [budget, guests, typeKey, manual, paramsValid, enabledCats, runAutoPick]);
 
   const reAutoPick = () => { setManual(false); setPhase('loading'); }; // эффект подхватит и пересоберёт
   const clearSelection = () => { setManual(true); setSelected([]); setAutoNote(''); };
@@ -289,8 +289,8 @@ export default function NewEvent() {
         {phase === 'idle' && (
           <div style={{ background: 'var(--surface-2)', border: '1px dashed var(--line-2)', borderRadius: 'var(--r)', padding: '26px 18px', textAlign: 'center' }}>
             <div style={{ fontSize: 34, marginBottom: 8 }}>🧮</div>
-            <div style={{ fontWeight: 800, color: 'var(--ink)', marginBottom: 4 }}>{t('Укажите бюджет и количество гостей', 'Бюджет пен қонақтар санын көрсетіңіз')}</div>
-            <div style={{ color: 'var(--ink-3)', fontSize: 14, marginBottom: 14 }}>{t('Мы автоматически подберём услуги под ваш бюджет.', 'Біз бюджетке қарай қызметтерді автоматты таңдаймыз.')}</div>
+            <div style={{ fontWeight: 800, color: 'var(--ink)', marginBottom: 4 }}>{t('Укажите бюджет, гостей и отметьте нужные услуги', 'Бюджет, қонақ санын көрсетіп, керек қызметтерді белгілеңіз')}</div>
+            <div style={{ color: 'var(--ink-3)', fontSize: 14, marginBottom: 14 }}>{t('Подбор начнётся, когда вы выберете, какие услуги нужны.', 'Таңдау қандай қызметтер керек екенін белгілегенде басталады.')}</div>
             <button type="button" onClick={pickManually} style={linkBtn}>{t('Или выбрать услуги вручную', 'Немесе қызметтерді қолмен таңдау')}</button>
           </div>
         )}
@@ -396,7 +396,9 @@ export default function NewEvent() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {evType.categories.map((catKey) => {
-                  if (!isCatEnabled(catKey)) return null; // выключено чипом «Какие услуги нужны?»
+                  // Скрываем не отмеченные чипами категории; если не отмечено ничего —
+                  // показываем все (ручной режим «выбрать услуги вручную»).
+                  if (enabledCats.size > 0 && !enabledCats.has(catKey)) return null;
                   const cfg = EVENT_CATEGORIES[catKey];
                   const isBookingCat = BOOKING_CATEGORIES.has(catKey); // отель/салон → пикер
                   const count = selected.filter((s) => s.catKey === catKey).length;

@@ -28,7 +28,13 @@ export default function RegisterForm({ heading, subtitle, loginRedirect, compact
     setError('');
     try {
       const roleId = role === 'supplier' ? 2 : 3;
-      await register({ ...form, email: form.email.trim().toLowerCase(), roleId });
+      // Пустые опциональные поля НЕ отправляем: бэкенд считает phone: ""
+      // «занятым» (409 «Этот телефон или email уже зарегистрирован»).
+      const payload = { email: form.email.trim().toLowerCase(), password: form.password, roleId };
+      if (form.phone.trim()) payload.phone = form.phone.trim();
+      if (form.name.trim()) payload.name = form.name.trim();
+      if (form.lastname.trim()) payload.lastname = form.lastname.trim();
+      await register(payload);
       setDone(true);
     } catch (err) {
       setError(err.message || t('Ошибка регистрации', 'Тіркелу қатесі'));

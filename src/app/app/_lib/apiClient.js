@@ -102,6 +102,16 @@ export const uploadListingFile = (segment, id, file) => {
 export const createVehicle = (data) =>
   client.post('/api/transport-vehicles', data).then((r) => r.data);
 
+// Фото номера гостиницы: отдельный эндпоинт (не files-сегмент), поле "file"
+// (контракт моб. Item2Screen.js:312-327).
+export const uploadRoomPhoto = (roomId, file) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  return client
+    .post(`/api/rooms/rooms/${roomId}/photos`, fd, { headers: { 'Content-Type': undefined } })
+    .then((r) => r.data);
+};
+
 // ── Мероприятия клиента (weddings/events) ────────────────────────
 export const createWedding = (data) =>
   client.post('/api/weddings/addwedding', data).then((r) => r.data);

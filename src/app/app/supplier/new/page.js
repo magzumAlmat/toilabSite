@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '../../_lib/AppContext';
-import { createListing, getEntityId, uploadListingFile } from '../../_lib/apiClient';
+import { createListing, getEntityId, uploadListingFile, uploadRoomPhoto } from '../../_lib/apiClient';
 import { SUPPLIER_GROUPS, GROUP_BY_KEY } from '../../_lib/supplier';
 import {
   CATEGORY_FORMS, CITY_DISTRICTS, FORM_KEYS, formatPhone, buildPayload, validate,
@@ -58,11 +58,13 @@ export default function NewListing() {
   const addVehicleFiles = (i, list) =>
     setVehicles((v) => v.map((veh, idx) => (idx === i ? { ...veh, files: [...veh.files, ...list] } : veh)));
 
-  // ── Гостиницы: номера (без загрузки фото — см. комментарий в categoryForms.js) ──
-  const addRoom = () => setRooms((r) => [...r, { values: {} }]);
+  // ── Гостиницы: номера (фото — отдельный эндпоинт /api/rooms/rooms/{id}/photos) ──
+  const addRoom = () => setRooms((r) => [...r, { values: {}, files: [] }]);
   const removeRoom = (i) => setRooms((r) => r.filter((_, idx) => idx !== i));
   const setRoomVal = (i, name, val) =>
     setRooms((r) => r.map((room, idx) => (idx === i ? { ...room, values: { ...room.values, [name]: val } } : room)));
+  const addRoomFiles = (i, list) =>
+    setRooms((r) => r.map((room, idx) => (idx === i ? { ...room, files: [...(room.files || []), ...list] } : room)));
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -160,7 +162,15 @@ export default function NewListing() {
             if (raw === '' || raw == null) continue;
             roomPayload[rf.name] = rf.type === 'number' ? Number(raw) : raw;
           }
-          await createListing(spec.rooms.createPath, roomPayload);
+          const roomRes = await createListing(spec.rooms.createPath, roomPayload);
+          // Фото номера — отдельный эндпоинт (контракт моб. Item2Screen.js:312-327).
+          const roomId = getEntityId(roomRes);
+          if (roomId && room.files?.length) {
+            for (let fi = 0; fi < room.files.length; fi++) {
+              setProgress(t('Фото номера', 'Бөлме фотосы') + ` ${ri + 1}: ${fi + 1}/${room.files.length}…`);
+              await uploadRoomPhoto(roomId, room.files[fi]);
+            }
+          }
         }
       }
 
@@ -253,6 +263,12 @@ export default function NewListing() {
                   <Field key={rf.name} field={rf} value={room.values[rf.name]} districts={districts} t={t} L={L}
                     onChange={(v) => setRoomVal(i, rf.name, v)} />
                 ))}
+                <FilePicker
+                  files={room.files || []}
+                  onPick={(e) => { addRoomFiles(i, Array.from(e.target.files || [])); e.target.value = ''; }}
+                  onRemove={(idx) => setRooms((rs) => rs.map((x, ix) => ix === i ? { ...x, files: x.files.filter((_, fi) => fi !== idx) } : x))}
+                  t={t}
+                />
               </div>
             ))}
             <button type="button" onClick={addRoom} style={{ ...linkBtn, alignSelf: 'flex-start' }}>

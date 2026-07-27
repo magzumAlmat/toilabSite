@@ -22,7 +22,7 @@ export const fileUrl = (path) => {
 };
 
 const NAME_FIELDS = ['name', 'title', 'fullName', 'companyName', 'studioName', 'teamName', 'storeName', 'salonName', 'flowerName', 'itemName', 'carName', 'item_name'];
-const PRICE_FIELDS = ['averageCost', 'cost', 'price', 'pricePerDay', 'pricePerShow', 'minPrice', 'priceFrom'];
+const PRICE_FIELDS = ['averageCost', 'cost', 'price', 'pricePerDay', 'pricePerShow', 'minPrice', 'priceFrom', 'pricePerHour', 'pricePerMinute', 'minBudget'];
 
 const MONEY_FIELDS = new Set(['averageCost', 'cost', 'price', 'pricePerDay', 'pricePerShow', 'pricePerHour', 'pricePerMinute', 'minPrice', 'priceFrom', 'minBudget', 'maxBudget', 'total_cost', 'budget']);
 

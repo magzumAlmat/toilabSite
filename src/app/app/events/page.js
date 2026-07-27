@@ -17,8 +17,19 @@ function asArray(res) {
   return [];
 }
 
+// Тип мероприятия (event_kind с бэка) → лейбл бейджа. Порт мобильного
+// PremiumEventCard (commit 0b560e1). У старых/веб-созданных записей поля
+// нет — тогда бейджа нет, ничего не выдумываем.
+const EVENT_KIND_LABELS = {
+  'traditional-family': { ru: 'День рождения', kz: 'Туған күн' },
+  corporate:            { ru: 'Корпоратив', kz: 'Корпоратив' },
+  prewedding:           { ru: 'Вечеринка перед свадьбой', kz: 'Үйлену тойы алдындағы кеш' },
+  prom:                 { ru: 'Выпускной', kz: 'Бітіру кеші' },
+  conference:           { ru: 'Конференция', kz: 'Конференция' },
+};
+
 export default function EventsList() {
-  const { ready, isAuth, user, t } = useApp();
+  const { ready, isAuth, user, t, lang } = useApp();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -126,6 +137,9 @@ export default function EventsList() {
           const over = remain < 0;
           const pct = budget > 0 ? Math.min(100, Math.round((total / budget) * 100)) : 0;
           const barColor = over ? 'var(--danger)' : 'var(--accent)';
+          const kindLabel = e.event_kind && EVENT_KIND_LABELS[e.event_kind]
+            ? (lang === 'ru' ? EVENT_KIND_LABELS[e.event_kind].ru : EVENT_KIND_LABELS[e.event_kind].kz)
+            : null;
           return (
             <motion.div layout key={e.id}
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -140,7 +154,14 @@ export default function EventsList() {
                     <span style={{ fontWeight: 800, fontSize: 18, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name || t('Без названия', 'Атаусыз')}</span>
                     <ChevronRight className="tl-ev-go" size={18} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
                   </div>
-                  {e.date && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--ink-3)', fontSize: 13, marginTop: 3 }}><CalendarRange size={13} /> {e.date}</div>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 3 }}>
+                    {e.date && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--ink-3)', fontSize: 13 }}><CalendarRange size={13} /> {e.date}</div>}
+                    {kindLabel && (
+                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--accent-600)', background: 'var(--surface-2)', borderRadius: 999, padding: '3px 10px' }}>
+                        {kindLabel}
+                      </span>
+                    )}
+                  </div>
                 </Link>
                 <button onClick={() => onDelete(e.id)} disabled={delId === e.id} aria-label={t('Удалить', 'Жою')}
                   style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, border: '1px solid var(--line)', background: 'var(--surface)', borderRadius: 'var(--r-sm)', color: 'var(--danger)', cursor: 'pointer' }}>

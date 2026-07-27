@@ -150,7 +150,12 @@ export const CATEGORY_FORMS = {
       f('cost', 'Стоимость, ₸', 'Құны, ₸', 'number', { req: true }),
       f('district', 'Район', 'Аудан', 'district'),
       f('phone', 'Телефон', 'Телефон', 'tel', { req: true }),
-      f('portfolio', 'Портфолио (ссылка)', 'Портфолио', 'text'),
+      f('portfolio', 'Портфолио (ссылка)', 'Портфолио', 'text', {
+        req: true,
+        reqMsg: 'Пожалуйста, укажите ссылку на портфолио',
+        pattern: 'https://',
+        patternMsg: 'Ссылка на портфолио должна содержать https://',
+      }),
       f('description', 'Описание', 'Сипаттама', 'textarea'),
     ],
   },
@@ -161,6 +166,7 @@ export const CATEGORY_FORMS = {
       f('cost', 'Стоимость, ₸', 'Құны, ₸', 'number', { req: true }),
       f('type', 'Тип программы', 'Бағдарлама түрі', 'text'),
       f('district', 'Район', 'Аудан', 'district'),
+      f('address', 'Адрес', 'Мекенжай', 'text'),
       f('phone', 'Телефон', 'Телефон', 'tel', { req: true }),
       f('description', 'Описание', 'Сипаттама', 'textarea'),
     ],
@@ -243,7 +249,10 @@ export const CATEGORY_FORMS = {
       f('studioName', 'Название студии', 'Студия атауы', 'text', { req: true }),
       f('serviceType', 'Тип услуг', 'Қызмет түрі', 'multiselect', { req: true, options: PHOTO_SERVICE_TYPES }),
       f('specialization', 'Специализация', 'Мамандану', 'text'),
+      f('pricePerHour', 'Цена за час (₸)', 'Сағатына баға (₸)', 'number'),
+      f('pricePerDay', 'Цена за день (₸)', 'Күніне баға (₸)', 'number'),
       f('district', 'Район', 'Аудан', 'district'),
+      f('address', 'Адрес', 'Мекенжай', 'text'),
       f('phone', 'Телефон', 'Телефон', 'tel', { req: true }),
       f('portfolio', 'Портфолио (ссылка)', 'Портфолио', 'text'),
       f('description', 'Описание', 'Сипаттама', 'textarea'),
@@ -256,9 +265,12 @@ export const CATEGORY_FORMS = {
       f('showType', 'Тип шоу', 'Шоу түрі', 'multiselect', { req: true, options: FIREWORK_SHOW_TYPES }),
       f('eventType', 'Тип мероприятия', 'Іс-шара түрі', 'text', { req: true }),
       f('pricePerShow', 'Цена за шоу, ₸', 'Шоу бағасы, ₸', 'number'),
+      f('pricePerMinute', 'Цена за минуту (₸)', 'Минутына баға (₸)', 'number'),
+      f('minBudget', 'Минимальный бюджет (₸)', 'Ең төменгі бюджет (₸)', 'number'),
       f('duration', 'Длительность, мин', 'Ұзақтығы, мин', 'number'),
       f('hasLicense', 'Есть лицензия', 'Лицензия бар', 'bool'),
       f('district', 'Район', 'Аудан', 'district'),
+      f('address', 'Адрес', 'Мекенжай', 'text'),
       f('phone', 'Телефон', 'Телефон', 'tel', { req: true }),
       f('link', 'Ссылка', 'Сілтеме', 'text'),
       f('description', 'Описание', 'Сипаттама', 'textarea'),
@@ -341,8 +353,9 @@ export function validate(groupKey, values, files) {
     if (!field.req) continue;
     const v = values[field.name];
     const empty = v == null || v === '' || (Array.isArray(v) && v.length === 0);
-    if (empty) return `Заполните поле «${field.ru}»`;
+    if (empty) return field.reqMsg || `Заполните поле «${field.ru}»`;
     if (field.type === 'tel' && !phoneValid(v)) return 'Телефон в формате +7 (XXX) XXX-XX-XX';
+    if (field.pattern && !String(v).includes(field.pattern)) return field.patternMsg || `Поле «${field.ru}» имеет неверный формат`;
   }
   if (spec.requirePhoto && (!files || files.length === 0)) return 'Добавьте хотя бы одну фотографию';
   return '';

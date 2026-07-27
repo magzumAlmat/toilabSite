@@ -63,7 +63,8 @@ export function catalogItemName(item) {
 
 // Цена записи каталога для выбранной категории.
 export function catalogItemCost(item, costField) {
-  const v = item?.[costField] ?? item?.cost ?? item?.averageCost ?? item?.price ?? item?.pricePerShow ?? item?.pricePerDay ?? 0;
+  const v = item?.[costField] ?? item?.cost ?? item?.averageCost ?? item?.price ?? item?.pricePerShow ?? item?.pricePerDay
+    ?? item?.pricePerHour ?? item?.pricePerMinute ?? item?.minBudget ?? 0;
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }

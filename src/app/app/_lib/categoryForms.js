@@ -104,6 +104,27 @@ export const CATEGORY_FORMS = {
       f('link', 'Сайт / ссылка', 'Сілтеме', 'text'),
       f('description', 'Описание', 'Сипаттама', 'textarea'),
     ],
+    // Номера добавляются отдельными запросами после создания гостиницы — контракт
+    // из моб. Item2Screen.js:534-567: СНАЧАЛА POST /api/rooms/room-types
+    // {name, hotel_id, capacity} → id, ЗАТЕМ POST /api/rooms/rooms {hotel_id,
+    // room_number, price, floor, room_type_id, status:'available'} — room_type_id
+    // в модели NOT NULL. Поля с typeOnly идут в создание ТИПА, не в payload номера.
+    // Фото номера — отдельный эндпоинт POST /api/rooms/rooms/{id}/photos (не
+    // files-сегмент), поэтому fileSegment не задаём.
+    rooms: {
+      createPath: '/api/rooms/rooms',
+      typeCreatePath: '/api/rooms/room-types',
+      parentField: 'hotel_id',
+      title: { ru: 'Номера', kz: 'Бөлмелер' },
+      addLabel: { ru: 'Добавить номер', kz: 'Бөлме қосу' },
+      fields: [
+        f('room_number', 'Номер / название', 'Бөлме №', 'text', { req: true }),
+        f('roomType', 'Тип номера (Стандарт, Люкс…)', 'Бөлме түрі', 'text', { req: true, typeOnly: true }),
+        f('capacity', 'Вместимость, гостей', 'Сыйымдылығы, қонақ', 'number', { typeOnly: true }),
+        f('price', 'Цена за ночь, ₸', 'Түнге бағасы, ₸', 'number', { req: true }),
+        f('floor', 'Этаж', 'Қабат', 'number'),
+      ],
+    },
   },
   clothing: {
     fileSegment: 'clothing',
@@ -129,9 +150,11 @@ export const CATEGORY_FORMS = {
     ],
     // Авто добавляются отдельными запросами (POST /api/transport-vehicles) после создания салона.
     vehicles: {
-      endpoint: '/api/transport-vehicles',
+      createPath: '/api/transport-vehicles',
       parentField: 'transportId',
       fileSegment: 'transport-vehicle',
+      title: { ru: 'Автомобили', kz: 'Көліктер' },
+      addLabel: { ru: 'Добавить авто', kz: 'Көлік қосу' },
       fields: [
         f('carName', 'Название авто', 'Көлік атауы', 'text', { req: true }),
         f('carType', 'Тип', 'Түрі', 'select', { req: true, options: ['Лимузин', 'Внедорожник', 'Седан', 'Минивэн', 'Кабриолет', 'Микроавтобус'] }),

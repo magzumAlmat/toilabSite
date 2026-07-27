@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '../../_lib/AppContext';
-import { createListing, getEntityId, uploadListingFile, createVehicle } from '../../_lib/apiClient';
+import { createListing, getEntityId, uploadListingFile } from '../../_lib/apiClient';
 import { SUPPLIER_GROUPS, GROUP_BY_KEY } from '../../_lib/supplier';
 import {
   CATEGORY_FORMS, CITY_DISTRICTS, FORM_KEYS, formatPhone, buildPayload, validate,
@@ -19,6 +19,7 @@ export default function NewListing() {
   const [values, setValues] = useState({});
   const [files, setFiles] = useState([]);
   const [vehicles, setVehicles] = useState([]); // только для транспорта
+  const [rooms, setRooms] = useState([]); // только для гостиниц
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState('');
   const [error, setError] = useState('');
@@ -38,6 +39,7 @@ export default function NewListing() {
     setValues({});
     setFiles([]);
     setVehicles([]);
+    setRooms([]);
     setError('');
   };
 
@@ -56,6 +58,12 @@ export default function NewListing() {
   const addVehicleFiles = (i, list) =>
     setVehicles((v) => v.map((veh, idx) => (idx === i ? { ...veh, files: [...veh.files, ...list] } : veh)));
 
+  // ── Гостиницы: номера (без загрузки фото — см. комментарий в categoryForms.js) ──
+  const addRoom = () => setRooms((r) => [...r, { values: {} }]);
+  const removeRoom = (i) => setRooms((r) => r.filter((_, idx) => idx !== i));
+  const setRoomVal = (i, name, val) =>
+    setRooms((r) => r.map((room, idx) => (idx === i ? { ...room, values: { ...room.values, [name]: val } } : room)));
+
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!city) { setError(t('Сначала выберите город', 'Алдымен қаланы таңдаңыз')); return; }
@@ -72,6 +80,19 @@ export default function NewListing() {
           const v = vehicles[i].values[vf.name];
           if (vf.req && (v == null || v === '')) {
             setError(`${t('Авто', 'Көлік')} #${i + 1}: ${t('заполните', 'толтырыңыз')} «${vf.ru}»`);
+            return;
+          }
+        }
+      }
+    }
+
+    // Валидация обязательных полей у номеров (гостиницы).
+    if (spec.rooms) {
+      for (let i = 0; i < rooms.length; i++) {
+        for (const rf of spec.rooms.fields) {
+          const v = rooms[i].values[rf.name];
+          if (rf.req && (v == null || v === '')) {
+            setError(`${t('Номер', 'Бөлме')} #${i + 1}: ${t('заполните', 'толтырыңыз')} «${rf.ru}»`);
             return;
           }
         }
@@ -97,22 +118,49 @@ export default function NewListing() {
 
       // Транспорт: создаём авто и их файлы.
       if (spec.vehicles && vehicles.length > 0) {
+        const vehAddLabel = t(spec.vehicles.addLabel?.ru || 'Добавление авто', spec.vehicles.addLabel?.kz || 'Көлік қосылуда');
         for (let vi = 0; vi < vehicles.length; vi++) {
           const veh = vehicles[vi];
-          setProgress(t('Добавление авто', 'Көлік қосылуда') + ` ${vi + 1}/${vehicles.length}…`);
+          setProgress(vehAddLabel + ` ${vi + 1}/${vehicles.length}…`);
           const vehPayload = { [spec.vehicles.parentField]: id };
           for (const vf of spec.vehicles.fields) {
             const raw = veh.values[vf.name];
             if (raw === '' || raw == null) continue;
             vehPayload[vf.name] = vf.type === 'number' ? Number(raw) : raw;
           }
-          const vehRes = await createVehicle(vehPayload);
+          const vehRes = await createListing(spec.vehicles.createPath, vehPayload);
           const vehId = getEntityId(vehRes);
           if (vehId) {
             for (let fi = 0; fi < veh.files.length; fi++) {
               await uploadListingFile(spec.vehicles.fileSegment, vehId, veh.files[fi]);
             }
           }
+        }
+      }
+
+      // Гостиницы: создаём номера (без файлов — см. комментарий в categoryForms.js).
+      if (spec.rooms && rooms.length > 0) {
+        const roomAddLabel = t(spec.rooms.addLabel?.ru || 'Добавление номера', spec.rooms.addLabel?.kz || 'Бөлме қосылуда');
+        for (let ri = 0; ri < rooms.length; ri++) {
+          const room = rooms[ri];
+          setProgress(roomAddLabel + ` ${ri + 1}/${rooms.length}…`);
+          // room_type_id NOT NULL на бэке: сначала создаём ТИП номера (как в моб. app),
+          // затем сам номер. typeOnly-поля (roomType/capacity) идут только в тип.
+          const roomPayload = { [spec.rooms.parentField]: id, status: 'available' };
+          if (spec.rooms.typeCreatePath) {
+            const typePayload = { name: room.values.roomType || room.values.room_number || 'Стандарт', hotel_id: id };
+            if (room.values.capacity) typePayload.capacity = Number(room.values.capacity);
+            const typeRes = await createListing(spec.rooms.typeCreatePath, typePayload);
+            const typeId = getEntityId(typeRes);
+            if (typeId) roomPayload.room_type_id = typeId;
+          }
+          for (const rf of spec.rooms.fields) {
+            if (rf.typeOnly) continue;
+            const raw = room.values[rf.name];
+            if (raw === '' || raw == null) continue;
+            roomPayload[rf.name] = rf.type === 'number' ? Number(raw) : raw;
+          }
+          await createListing(spec.rooms.createPath, roomPayload);
         }
       }
 
@@ -162,7 +210,9 @@ export default function NewListing() {
         {/* Транспорт: авто */}
         {spec.vehicles && (
           <div style={{ border: '1px dashed #D4C4B0', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ fontWeight: 700, color: '#4A3F35' }}>{t('Автомобили', 'Көліктер')}</div>
+            <div style={{ fontWeight: 700, color: '#4A3F35' }}>
+              {t(spec.vehicles.title?.ru || 'Автомобили', spec.vehicles.title?.kz || 'Көліктер')}
+            </div>
             {vehicles.map((veh, i) => (
               <div key={i} style={{ background: '#FAF6F0', borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -181,7 +231,33 @@ export default function NewListing() {
                 />
               </div>
             ))}
-            <button type="button" onClick={addVehicle} style={{ ...linkBtn, alignSelf: 'flex-start' }}>+ {t('Добавить авто', 'Көлік қосу')}</button>
+            <button type="button" onClick={addVehicle} style={{ ...linkBtn, alignSelf: 'flex-start' }}>
+              + {t(spec.vehicles.addLabel?.ru || 'Добавить авто', spec.vehicles.addLabel?.kz || 'Көлік қосу')}
+            </button>
+          </div>
+        )}
+
+        {/* Гостиницы: номера */}
+        {spec.rooms && (
+          <div style={{ border: '1px dashed #D4C4B0', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontWeight: 700, color: '#4A3F35' }}>
+              {t(spec.rooms.title?.ru || 'Номера', spec.rooms.title?.kz || 'Бөлмелер')}
+            </div>
+            {rooms.map((room, i) => (
+              <div key={i} style={{ background: '#FAF6F0', borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, color: '#8C7B6D' }}>{t('Номер', 'Бөлме')} #{i + 1}</span>
+                  <button type="button" onClick={() => removeRoom(i)} style={linkBtn}>{t('Удалить', 'Жою')}</button>
+                </div>
+                {spec.rooms.fields.map((rf) => (
+                  <Field key={rf.name} field={rf} value={room.values[rf.name]} districts={districts} t={t} L={L}
+                    onChange={(v) => setRoomVal(i, rf.name, v)} />
+                ))}
+              </div>
+            ))}
+            <button type="button" onClick={addRoom} style={{ ...linkBtn, alignSelf: 'flex-start' }}>
+              + {t(spec.rooms.addLabel?.ru || 'Добавить номер', spec.rooms.addLabel?.kz || 'Бөлме қосу')}
+            </button>
           </div>
         )}
 

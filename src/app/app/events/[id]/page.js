@@ -449,9 +449,10 @@ export default function EventDetail() {
       {/* Модалка своего подарка — поля 1-в-1 с мобильным Item3Screen */}
       {customOpen && (
         <div onClick={() => setCustomOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18, zIndex: 60 }}>
+          style={{ position: 'fixed', inset: 0, background: 'rgba(40,33,28,0.6)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18, zIndex: 120, animation: 'tlFadeIn .18s ease-out' }}>
           <div onClick={(e) => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: 16, padding: 18, width: '100%', maxWidth: 460, maxHeight: '90vh', overflowY: 'auto' }}>
+            style={{ background: '#fff', borderRadius: 16, padding: 18, width: '100%', maxWidth: 460, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(40,33,28,0.35)', animation: 'tlSlideUp .22s ease-out' }}>
+            <style>{`@keyframes tlFadeIn { from { opacity: 0 } to { opacity: 1 } } @keyframes tlSlideUp { from { opacity: 0; transform: translateY(16px) scale(.98) } to { opacity: 1; transform: none } }`}</style>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <strong style={{ fontSize: 18, color: '#4A3F35' }}>{t('Свой подарок', 'Өз сыйлығыңыз')}</strong>
               <button onClick={() => setCustomOpen(false)} style={{ border: 'none', background: 'none', fontSize: 20, cursor: 'pointer', color: '#B08D57' }}>✕</button>

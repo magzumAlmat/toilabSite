@@ -43,10 +43,13 @@ export default function EventDetail() {
   const [goodsSearch, setGoodsSearch] = useState('');
   const [togglingGood, setTogglingGood] = useState(null);
   // Свой подарок, которого нет в каталоге («всё не предусмотришь»):
-  // создаём good → добавляем его в wishlist.
-  const [customName, setCustomName] = useState('');
-  const [customPrice, setCustomPrice] = useState('');
+  // создаём good → добавляем его в wishlist. Поля — точь-в-точь как в
+  // мобильном Item3Screen (обязательно только название).
+  const emptyCustom = { item_name: '', link: '', description: '', cost: '', storeName: '', address: '', phone: '' };
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customForm, setCustomForm] = useState(emptyCustom);
   const [addingCustom, setAddingCustom] = useState(false);
+  const setCF = (key, v) => setCustomForm((f) => ({ ...f, [key]: v }));
 
   const loadWishlist = useCallback(async () => {
     try { setWishlist(asArray(await getWeddingWishlist(id))); } catch { /* пусто */ }
@@ -158,21 +161,28 @@ export default function EventDetail() {
   // Свой подарок: POST /api/goods (те же поля, что читает список: item_name/cost),
   // затем createWish с новым good_id — как toggleGood, но с созданием товара.
   const addCustomGood = async () => {
-    const name = customName.trim();
-    if (!name) return;
+    const name = customForm.item_name.trim();
+    if (!name) { alert(t('Пожалуйста, укажите название подарка', 'Сыйлықтың атауын көрсетіңіз')); return; }
     setAddingCustom(true);
     try {
-      const cost = parseFloat(customPrice) || 0;
-      // category обязателен на бэке («Категория и название товара обязательны»).
-      const res = await createGood({ category: 'Miscellaneous', item_name: name, cost });
+      // Payload — контракт мобильного handleAddCustomGift (Item3Screen):
+      // category обязателен на бэке, cost строкой ('0' если пусто), магазин в specs.
+      const res = await createGood({
+        category: 'Miscellaneous',
+        item_name: name,
+        description: customForm.description,
+        cost: customForm.cost || '0',
+        link: customForm.link,
+        specs: { storeName: customForm.storeName, address: customForm.address, phone: customForm.phone },
+      });
       const newId = getEntityId(res);
       if (!newId) throw new Error(t('Не удалось создать подарок', 'Сыйлықты құру мүмкін болмады'));
       await createWish({ event_id: Number(id), good_id: newId, event_type: 'wedding' });
       await loadWishlist();
       // Показываем созданный товар в списке модалки — сразу с пометкой «В списке ✓».
-      setGoods((gs) => [{ id: newId, item_name: name, cost }, ...gs]);
-      setCustomName('');
-      setCustomPrice('');
+      setGoods((gs) => [{ id: newId, item_name: name, cost: customForm.cost || 0 }, ...gs]);
+      setCustomForm(emptyCustom);
+      setCustomOpen(false);
     } catch (err) {
       const hostErr = /host/i.test(err.message || '');
       alert(hostErr ? t('Управлять списком может только организатор', 'Тізімді тек ұйымдастырушы басқара алады') : (err.message || t('Не удалось', 'Қате')));
@@ -422,27 +432,77 @@ export default function EventDetail() {
                   );
                 })}
               </div>
-              {/* Свой подарок — если в каталоге нет нужного («всё не предусмотришь») */}
+              {/* Свой подарок — если в каталоге нет нужного («всё не предусмотришь»).
+                  Кнопка открывает модалку с полями как в мобильном Item3Screen. */}
               <div style={{ padding: '12px 18px 18px', borderTop: '1px solid var(--line, #E5D9C8)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink, #4A3F35)', marginBottom: 8 }}>
-                  {t('Или добавьте свой подарок', 'Немесе өз сыйлығыңызды қосыңыз')}
-                </div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <input value={customName} onChange={(e) => setCustomName(e.target.value)}
-                    placeholder={t('Название', 'Атауы')} style={{ ...inp, flex: '2 1 160px', width: 'auto' }} />
-                  <input type="number" inputMode="numeric" min="0" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)}
-                    placeholder={t('Цена, ₸ (необязательно)', 'Бағасы, ₸ (міндетті емес)')} style={{ ...inp, flex: '1 1 140px', width: 'auto' }} />
-                  <button onClick={addCustomGood} disabled={addingCustom || !customName.trim()}
-                    style={{ padding: '10px 18px', borderRadius: 999, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap',
-                      background: 'var(--accent, #B08D57)', color: '#fff', opacity: addingCustom || !customName.trim() ? 0.6 : 1 }}>
-                    {addingCustom ? t('Добавление…', 'Қосылуда…') : t('Добавить своё', 'Өзімдікін қосу')}
-                  </button>
-                </div>
+                <button onClick={() => setCustomOpen(true)}
+                  style={{ width: '100%', padding: '12px 18px', borderRadius: 999, border: '1px dashed var(--accent, #B08D57)', cursor: 'pointer',
+                    fontSize: 14, fontWeight: 700, background: '#fff', color: 'var(--accent, #B08D57)' }}>
+                  + {t('Или добавьте свой подарок', 'Немесе өз сыйлығыңызды қосыңыз')}
+                </button>
               </div>
             </div>
           </div>
         );
       })()}
+
+      {/* Модалка своего подарка — поля 1-в-1 с мобильным Item3Screen */}
+      {customOpen && (
+        <div onClick={() => setCustomOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18, zIndex: 60 }}>
+          <div onClick={(e) => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 16, padding: 18, width: '100%', maxWidth: 460, maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <strong style={{ fontSize: 18, color: '#4A3F35' }}>{t('Свой подарок', 'Өз сыйлығыңыз')}</strong>
+              <button onClick={() => setCustomOpen(false)} style={{ border: 'none', background: 'none', fontSize: 20, cursor: 'pointer', color: '#B08D57' }}>✕</button>
+            </div>
+
+            <div style={col}>
+              <label style={lbl}>{t('Название подарка', 'Сыйлықтың атауы')} *</label>
+              <input value={customForm.item_name} onChange={(e) => setCF('item_name', e.target.value)}
+                placeholder={t('Например: набор посуды', 'Мысалы: ыдыс жинағы')} style={inp} />
+            </div>
+            <div style={{ ...col, marginTop: 10 }}>
+              <label style={lbl}>{t('Ссылка на товар', 'Тауарға сілтеме')}</label>
+              <input value={customForm.link} onChange={(e) => setCF('link', e.target.value)}
+                placeholder="https://..." autoCapitalize="none" style={inp} />
+            </div>
+            <div style={{ ...col, marginTop: 10 }}>
+              <label style={lbl}>{t('Описание', 'Сипаттама')}</label>
+              <textarea value={customForm.description} onChange={(e) => setCF('description', e.target.value)}
+                placeholder={t('Цвет, размер, пожелания', 'Түсі, өлшемі, тілектер')} rows={3} style={{ ...inp, resize: 'vertical' }} />
+            </div>
+            <div style={{ ...col, marginTop: 10 }}>
+              <label style={lbl}>{t('Стоимость (₸)', 'Құны (₸)')}</label>
+              <input inputMode="numeric" value={customForm.cost}
+                onChange={(e) => setCF('cost', e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder={t('Например: 25000', 'Мысалы: 25000')} style={inp} />
+            </div>
+            <div style={{ ...col, marginTop: 10 }}>
+              <label style={lbl}>{t('Название магазина', 'Дүкен атауы')}</label>
+              <input value={customForm.storeName} onChange={(e) => setCF('storeName', e.target.value)}
+                placeholder={t('Где купить подарок', 'Сыйлықты қайдан сатып алуға болады')} style={inp} />
+            </div>
+            <div style={{ ...col, marginTop: 10 }}>
+              <label style={lbl}>{t('Адрес магазина', 'Дүкен мекенжайы')}</label>
+              <input value={customForm.address} onChange={(e) => setCF('address', e.target.value)}
+                placeholder={t('Улица и номер дома', 'Көше және үй нөмірі')} style={inp} />
+            </div>
+            <div style={{ ...col, marginTop: 10 }}>
+              <label style={lbl}>{t('Телефон магазина', 'Дүкен телефоны')}</label>
+              <input value={customForm.phone} onChange={(e) => setCF('phone', e.target.value)}
+                placeholder="+7 (___) ___-__-__" inputMode="tel" style={inp} />
+            </div>
+
+            <button onClick={addCustomGood} disabled={addingCustom || !customForm.item_name.trim()}
+              style={{ width: '100%', marginTop: 16, padding: '12px 0', borderRadius: 999, border: 'none', cursor: 'pointer',
+                fontSize: 15, fontWeight: 700, background: 'var(--accent, #B08D57)', color: '#fff',
+                opacity: addingCustom || !customForm.item_name.trim() ? 0.6 : 1 }}>
+              {addingCustom ? t('Добавление…', 'Қосылуда…') : `✓ ${t('Добавить свой', 'Өзімдікін қосу')}`}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -83,6 +83,7 @@ export const getSupplierListings = () =>
   client.get('/api/supplier/listings').then((r) => r.data);
 
 export const createListing = (path, data) => client.post(path, data).then((r) => r.data);
+export const updateListing = (path, data) => client.put(path, data).then((r) => r.data);
 export const deleteListing = (path) => client.delete(path).then((r) => r.data);
 
 // id созданной записи: бэкенд возвращает либо {id}, либо {data:{id}}.

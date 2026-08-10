@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useApp } from '../_lib/AppContext';
 import { getSupplierListings, deleteListing } from '../_lib/apiClient';
 import { GROUP_BY_KEY, flattenListings, listingName, listingPrice, listingSub } from '../_lib/supplier';
+import { FORM_KEYS } from '../_lib/categoryForms';
 import { pick } from '../_lib/categories';
 
 export default function SupplierCabinet() {
@@ -107,10 +108,19 @@ export default function SupplierCabinet() {
 
               <StatusBadge status={status} reason={item.rejectionReason} t={t} />
 
-              <button onClick={() => onDelete(item)} disabled={busyId === (pick(item, ['id', '_id']) + item._group)}
-                style={{ marginTop: 4, alignSelf: 'flex-start', padding: '7px 14px', borderRadius: 999, border: '1px solid #E0B4B4', background: '#fff', color: '#B91C1C', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-                {t('Удалить', 'Жою')}
-              </button>
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                {/* Редактирование доступно для категорий, у которых есть форма (categoryForms) */}
+                {FORM_KEYS.includes(item._group) && (
+                  <Link href={`/app/supplier/edit/${item._group}/${pick(item, ['id', '_id'])}`}
+                    style={{ padding: '7px 14px', borderRadius: 999, border: '1px solid #D4C4B0', background: '#fff', color: '#8C6D3F', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>
+                    {t('Изменить', 'Өзгерту')}
+                  </Link>
+                )}
+                <button onClick={() => onDelete(item)} disabled={busyId === (pick(item, ['id', '_id']) + item._group)}
+                  style={{ padding: '7px 14px', borderRadius: 999, border: '1px solid #E0B4B4', background: '#fff', color: '#B91C1C', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                  {t('Удалить', 'Жою')}
+                </button>
+              </div>
             </div>
           );
         })}

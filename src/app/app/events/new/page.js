@@ -43,6 +43,11 @@ export default function NewEvent() {
   const [cache, setCache] = useState({});       // { catKey: items[] }
   const [loadingCat, setLoadingCat] = useState(null);
   const [selected, setSelected] = useState([]);  // [{ catKey, item, quantity }]
+
+  // Категории-услуги без выбора количества (решение владельца, 2026-08):
+  // услуга на мероприятие всегда одна, счётчик «шт» только путает.
+  // Товарные категории (торты, цветы, ювелирка, подарки, одежда, сувениры) — со счётчиком.
+  const NO_QTY_CATEGORIES = new Set(['tamada', 'program', 'equipment', 'photo-video', 'fireworks', 'typography']);
   const [enabledCats, setEnabledCats] = useState(() => new Set()); // пусто = система спрашивает, автоподбор ждёт выбора услуг
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -329,7 +334,8 @@ export default function NewEvent() {
                   const isBooking = !!s.booking;
                   const unit = catalogItemCost(s.item, cfg.costField);
                   const isGuestQty = !isBooking && (s.catKey === 'restaurants' || s.catKey === 'hotels');
-                  const qty = isGuestQty ? (parseInt(guests, 10) || 1) : s.quantity;
+                  const isFixedQty = !isBooking && NO_QTY_CATEGORIES.has(s.catKey);
+                  const qty = isGuestQty ? (parseInt(guests, 10) || 1) : isFixedQty ? 1 : s.quantity;
                   const rowTotal = isBooking ? bookingCost(s.booking) : unit * qty;
                   return (
                     <div key={keyOf(s.catKey, s.item)} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '8px 0', borderTop: '1px solid var(--line)' }}>
@@ -360,6 +366,8 @@ export default function NewEvent() {
                               {t('Изменить', 'Өзгерту')}
                             </button>
                           </>
+                        ) : isFixedQty ? (
+                          <span>{fmt(unit)} ₸</span>
                         ) : (
                           <>
                             <span>{fmt(unit)} ₸ ×</span>
@@ -439,7 +447,7 @@ export default function NewEvent() {
                                     ⓘ {t('Подробнее', 'Толығырақ')}
                                   </button>
                                 </div>
-                                {sel && !isBookingCat && !isGuestQty && (
+                                {sel && !isBookingCat && !isGuestQty && !NO_QTY_CATEGORIES.has(catKey) && (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                     <button type="button" onClick={() => setQty(catKey, item, (selEntry?.quantity || 1) - 1)} style={stepBtn}>−</button>
                                     <span style={{ minWidth: 20, textAlign: 'center', fontSize: 14 }}>{selEntry?.quantity || 1}</span>

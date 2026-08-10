@@ -153,6 +153,20 @@ export const createTransportBooking = (data) =>
 export const blockRestaurantDate = (restaurantId, date) =>
   client.post('/api/block', { restaurantId, date }).then((r) => r.data);
 
+// ── Календарь броней поставщика (контракты из моб. api.js) ───────
+export const fetchAllBlockedDays = () =>
+  client.get('/api/all-blocked-days').then((r) => r.data);
+export const unblockRestaurantDate = (restaurantId, date) =>
+  client.delete('/api/block', { data: { restaurantId, date } }).then((r) => r.data);
+export const getRoomBookings = () =>
+  client.get('/api/room-availability/').then((r) => r.data);
+export const cancelRoomBooking = (bookingReference) =>
+  client.patch(`/api/room-availability/${bookingReference}/cancel`).then((r) => r.data);
+export const getTransportBookings = () =>
+  client.get('/api/transport-availability/').then((r) => r.data);
+export const cancelTransportBooking = (bookingReference) =>
+  client.patch(`/api/transport-availability/${bookingReference}/cancel`).then((r) => r.data);
+
 // ── Wishlist мероприятия (список подарков) ───────────────────────
 // Позиция ссылается на товар (good_id). Кастомный подарок: сначала создать good.
 export const createGood = (data) => client.post('/api/goods', data).then((r) => r.data);

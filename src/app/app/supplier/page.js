@@ -66,6 +66,25 @@ export default function SupplierCabinet() {
         </Link>
       </div>
 
+      {/* Календарь броней — только если есть рестораны/гостиницы/автосалоны (как в мобилке) */}
+      {!loading && items.some((i) => ['restaurants', 'hotels', 'transport'].includes(i._group)) && (
+        <Link href="/app/supplier/bookings"
+          style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid rgba(212,196,176,0.5)', borderRadius: 16, padding: 16, marginBottom: 16, textDecoration: 'none' }}>
+          <span style={{ fontSize: 26 }}>📅</span>
+          <span style={{ flex: 1 }}>
+            <span style={{ display: 'block', fontWeight: 700, fontSize: 16, color: '#4A3F35' }}>{t('Календарь броней', 'Брондар күнтізбесі')}</span>
+            <span style={{ display: 'block', fontSize: 13, color: '#6B5A4D', marginTop: 2 }}>
+              {[
+                items.some((i) => i._group === 'restaurants') && t('Рестораны', 'Мейрамханалар'),
+                items.some((i) => i._group === 'hotels') && t('Гостиницы', 'Қонақ үйлер'),
+                items.some((i) => i._group === 'transport') && t('Авто', 'Авто'),
+              ].filter(Boolean).join(' · ')}
+            </span>
+          </span>
+          <span style={{ color: '#B08D57', fontWeight: 700 }}>›</span>
+        </Link>
+      )}
+
       {loading && <p style={{ color: '#6B5A4D' }}>{t('Загрузка…', 'Жүктелуде…')}</p>}
       {error && !loading && <p style={{ color: '#A33', background: '#FCEBEB', padding: 12, borderRadius: 12 }}>{error}</p>}
       {!loading && !error && items.length === 0 && (

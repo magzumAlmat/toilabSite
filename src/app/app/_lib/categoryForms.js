@@ -32,7 +32,8 @@ export function formatPhone(input) {
 const phoneValid = (p) => /^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/.test(p || '');
 
 // Общие наборы опций.
-const GENDER = ['мужской', 'женский'];
+// «детский» добавлен вслед за мобильным приложением (ENUM на бэке расширен миграцией).
+const GENDER = ['мужской', 'женский', 'детский'];
 const HOTEL_TYPES = ['Отель', 'Хостел', 'Мотель', 'Гостевой дом', 'Апартаменты'];
 const PHOTO_SERVICE_TYPES = ['Фотосъёмка', 'Видеосъёмка', 'Аэросъёмка', 'Монтаж', 'Студийная съёмка'];
 const FIREWORK_SHOW_TYPES = ['Наземный', 'Парковый', 'Высотный', 'Музыкальный', 'Дневной'];
@@ -132,7 +133,7 @@ export const CATEGORY_FORMS = {
       f('storeName', 'Название магазина', 'Дүкен атауы', 'text', { req: true }),
       f('itemName', 'Название товара', 'Тауар атауы', 'text', { req: true }),
       f('cost', 'Цена, ₸', 'Бағасы, ₸', 'number', { req: true }),
-      f('gender', 'Пол', 'Жынысы', 'select', { options: GENDER }),
+      f('gender', 'Для кого', 'Кімге арналған', 'select', { options: GENDER }),
       f('district', 'Район', 'Аудан', 'district', { req: true }),
       f('address', 'Адрес', 'Мекенжай', 'text', { req: true }),
       f('phone', 'Телефон', 'Телефон', 'tel', { req: true }),

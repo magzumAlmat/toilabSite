@@ -6,10 +6,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   getRoomsByHotel, getVehiclesByTransportId,
-  checkRoomAvailability, checkVehicleAvailability,
+  checkRoomAvailability, checkVehicleAvailability, getFiles,
 } from './apiClient';
 import { catalogItemName, fmt } from './events';
 import { addDaysISO } from './booking';
+import { fileUrl } from './catalogFields';
 
 const asArray = (res) => (Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : []);
 
@@ -57,8 +58,43 @@ function StartDateInput({ label, value, onChange }) {
   );
 }
 
+// Деталка номера/авто поверх пикера: поля записи + фото и видео.
+function DetailSheet({ title, fields, media, loading, onClose, t }) {
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(40,33,28,0.6)', backdropFilter: 'blur(2px)', zIndex: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, maxWidth: 520, width: '100%', maxHeight: '88vh', overflowY: 'auto', padding: 18, boxShadow: '0 24px 60px rgba(40,33,28,0.35)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
+          <h4 style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', margin: 0 }}>{title}</h4>
+          <button type="button" onClick={onClose} style={{ border: 'none', background: 'none', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 22, lineHeight: 1 }}>×</button>
+        </div>
+
+        {fields.filter(([, v]) => v !== null && v !== undefined && v !== '').map(([label, v]) => (
+          <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '7px 0', borderBottom: '1px solid var(--line, #E5D9C8)', fontSize: 14 }}>
+            <span style={{ color: 'var(--ink-3)' }}>{label}</span>
+            <span style={{ color: 'var(--ink)', fontWeight: 600, textAlign: 'right' }}>{String(v)}</span>
+          </div>
+        ))}
+
+        {loading && <div style={{ color: 'var(--ink-3)', fontSize: 13, padding: '12px 0' }}>{t('Загрузка медиа…', 'Медиа жүктелуде…')}</div>}
+        {!loading && media.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8, marginTop: 12 }}>
+            {media.map((m, i) => m.video ? (
+              <video key={i} src={m.url} controls playsInline style={{ width: '100%', height: 110, objectFit: 'cover', borderRadius: 10, background: '#000' }} />
+            ) : (
+              <img key={i} src={m.url} alt="" loading="lazy" style={{ width: '100%', height: 110, objectFit: 'cover', borderRadius: 10 }} />
+            ))}
+          </div>
+        )}
+        {!loading && media.length === 0 && (
+          <div style={{ color: 'var(--ink-3)', fontSize: 13, padding: '12px 0' }}>{t('Фото и видео не загружены', 'Фото мен видео жүктелмеген')}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Строка подпозиции (номер/авто) с чекбоксом и статусом занятости.
-function SubItemRow({ name, price, priceLabel, chips, selected, busyStatus, onToggle, t }) {
+function SubItemRow({ name, price, priceLabel, chips, selected, busyStatus, onToggle, onInfo, t }) {
   const isBusy = busyStatus === false; // false = занято; undefined/null = неизвестно
   return (
     <button type="button" onClick={isBusy ? undefined : onToggle} disabled={isBusy}
@@ -70,6 +106,14 @@ function SubItemRow({ name, price, priceLabel, chips, selected, busyStatus, onTo
         {chips?.length > 0 && (
           <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 3 }}>
             {chips.map((c, i) => <span key={i} style={{ fontSize: 11.5, color: 'var(--ink-3)', background: 'var(--surface-2)', borderRadius: 999, padding: '2px 8px' }}>{c}</span>)}
+          </span>
+        )}
+        {onInfo && (
+          <span role="button" tabIndex={0}
+            onClick={(e) => { e.stopPropagation(); onInfo(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onInfo(); } }}
+            style={{ display: 'inline-block', marginTop: 4, color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+            ⓘ {t('Подробнее', 'Толығырақ')}
           </span>
         )}
       </span>
@@ -90,6 +134,7 @@ export function RoomPickerModal({ hotel, date, initial, onSave, onClose, t }) {
   const [nights, setNights] = useState(Math.max(1, parseInt(initial?.nights, 10) || 1));
   const [start, setStart] = useState(initial?.startDate || date || ''); // дата заезда
   const [avail, setAvail] = useState({}); // { roomId: boolean }
+  const [detail, setDetail] = useState(null); // номер для деталки
   const availSeq = useRef(0);
 
   useEffect(() => {
@@ -145,8 +190,21 @@ export function RoomPickerModal({ hotel, date, initial, onSave, onClose, t }) {
           name={r.name || (r.room_number != null ? `${t('Номер', 'Бөлме')} ${r.room_number}` : `#${r.id}`)}
           price={parseFloat(r.price) || 0} priceLabel={t('за ночь', 'түніне')}
           chips={[r.capacity ? `👥 ${r.capacity}` : null, r.floor != null ? `${t('этаж', 'қабат')} ${r.floor}` : null, r.view_type || null].filter(Boolean)}
-          selected={sel.has(r.id)} busyStatus={avail[r.id]} onToggle={() => toggle(r)} />
+          selected={sel.has(r.id)} busyStatus={avail[r.id]} onToggle={() => toggle(r)} onInfo={() => setDetail(r)} />
       ))}
+      {detail && (
+        <DetailSheet t={t} onClose={() => setDetail(null)} loading={false}
+          title={detail.name || (detail.room_number != null ? `${t('Номер', 'Бөлме')} ${detail.room_number}` : `#${detail.id}`)}
+          fields={[
+            [t('Номер', 'Бөлме'), detail.room_number],
+            [t('Тип', 'Түрі'), detail.roomType?.name || detail.view_type],
+            [t('Вместимость', 'Сыйымдылық'), detail.capacity ? `${detail.capacity} 👥` : null],
+            [t('Этаж', 'Қабат'), detail.floor],
+            [t('Цена за ночь', 'Түнгі бағасы'), `${fmt(parseFloat(detail.price) || 0)} ₸`],
+            [t('Описание', 'Сипаттама'), detail.description],
+          ]}
+          media={(Array.isArray(detail.photos) ? detail.photos : []).map((p) => ({ url: fileUrl(p), video: /\.(mp4|mov|webm)$/i.test(p) })).filter((m) => m.url)} />
+      )}
     </PickerModal>
   );
 }
@@ -160,7 +218,25 @@ export function VehiclePickerModal({ salon, date, initial, onSave, onClose, t })
   const [days, setDays] = useState(Math.max(1, parseInt(initial?.days, 10) || 1));
   const [start, setStart] = useState(initial?.startDate || date || ''); // начало аренды
   const [avail, setAvail] = useState({}); // { vehicleId: boolean }
+  const [detail, setDetail] = useState(null); // авто для деталки
+  const [detailMedia, setDetailMedia] = useState([]);
+  const [detailLoading, setDetailLoading] = useState(false);
   const availSeq = useRef(0);
+
+  // Медиа авто: GET /api/transport-vehicle/{id}/files (сегмент из categoryForms).
+  useEffect(() => {
+    if (!detail) { setDetailMedia([]); return; }
+    let on = true;
+    setDetailLoading(true);
+    getFiles('transport-vehicle', detail.id)
+      .then((res) => {
+        const arr = Array.isArray(res) ? res : res?.data || [];
+        if (on) setDetailMedia(arr.map((f) => ({ url: fileUrl(f.path || f.url), video: !!(f.mimetype && f.mimetype.startsWith('video')) })).filter((m) => m.url));
+      })
+      .catch(() => { if (on) setDetailMedia([]); })
+      .finally(() => { if (on) setDetailLoading(false); });
+    return () => { on = false; };
+  }, [detail]);
 
   useEffect(() => {
     if (preloaded) return;
@@ -216,8 +292,21 @@ export function VehiclePickerModal({ salon, date, initial, onSave, onClose, t })
           name={(v.carName || `#${v.id}`) + (v.carType ? ` · ${v.carType}` : '')}
           price={parseFloat(v.pricePerDay ?? v.cost ?? v.price) || 0} priceLabel={t('в день', 'күніне')}
           chips={[v.year || null, v.color || null, v.capacity ? `👥 ${v.capacity}` : null].filter(Boolean)}
-          selected={sel.has(v.id)} busyStatus={avail[v.id]} onToggle={() => toggle(v)} />
+          selected={sel.has(v.id)} busyStatus={avail[v.id]} onToggle={() => toggle(v)} onInfo={() => setDetail(v)} />
       ))}
+      {detail && (
+        <DetailSheet t={t} onClose={() => setDetail(null)} loading={detailLoading}
+          title={(detail.carName || `#${detail.id}`) + (detail.carType ? ` · ${detail.carType}` : '')}
+          fields={[
+            [t('Тип', 'Түрі'), detail.carType],
+            [t('Год', 'Жылы'), detail.year],
+            [t('Цвет', 'Түсі'), detail.color],
+            [t('Вместимость', 'Сыйымдылық'), detail.capacity ? `${detail.capacity} 👥` : null],
+            [t('Цена в день', 'Күндік бағасы'), `${fmt(parseFloat(detail.pricePerDay ?? detail.cost ?? detail.price) || 0)} ₸`],
+            [t('Описание', 'Сипаттама'), detail.description],
+          ]}
+          media={detailMedia} />
+      )}
     </PickerModal>
   );
 }

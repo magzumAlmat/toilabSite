@@ -186,6 +186,12 @@ export function recommendSelection({ categories, budget, guestCount, catalogByCa
 export const ITEM_TYPE_META = {
   restaurant:   { ru: 'Рестораны',            kz: 'Мейрамханалар',       icon: '🍽️', detail: (id) => `/api/restaurantbyid/${id}`, seg: 'restaurant' },
   hotel:        { ru: 'Гостиницы',            kz: 'Қонақ үйлер',         icon: '🏨', detail: (id) => `/api/hotel/${id}`, seg: 'hotel' },
+  // Мобильное приложение пишет в items тип «hotels» (мн. число) — алиас, иначе
+  // запись рендерится без названия/иконки и без «Подробнее».
+  hotels:       { ru: 'Гостиницы',            kz: 'Қонақ үйлер',         icon: '🏨', detail: (id) => `/api/hotel/${id}`, seg: 'hotel' },
+  // «hallDecoration» — тоже только из мобильного приложения (на вебе категории нет).
+  hallDecoration:    { ru: 'Оформление зала', kz: 'Зал безендіру',       icon: '🎊', detail: (id) => `/api/hall-decorations/${id}`, seg: 'hall-decoration' },
+  'hall-decoration': { ru: 'Оформление зала', kz: 'Зал безендіру',       icon: '🎊', detail: (id) => `/api/hall-decorations/${id}`, seg: 'hall-decoration' },
   cake:         { ru: 'Торты',                kz: 'Торттар',             icon: '🎂', detail: (id) => `/api/cake/${id}`, seg: 'cake' },
   flowers:      { ru: 'Цветы',                kz: 'Гүлдер',              icon: '💐', detail: (id) => `/api/flowers/${id}`, seg: 'flowers' },
   tamada:       { ru: 'Тамада / ведущие',     kz: 'Тамада',              icon: '🎤', detail: (id) => `/api/tamada/${id}`, seg: 'tamada' },

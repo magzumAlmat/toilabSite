@@ -22,6 +22,7 @@ export default function MainHeader() {
     isAuth && user?.roleId === 2 && { href: '/app/supplier', label: 'Кабинет', active: pathname.startsWith('/app/supplier') },
     { href: '/about', label: isKz ? 'Біз туралы' : 'О нас', active: pathname === '/about' },
     { href: '/contacts', label: isKz ? 'Байланыс' : 'Контакты', active: pathname === '/contacts' },
+    { href: '/privacy', label: isKz ? 'Құпиялылық саясаты' : 'Политика конфиденциальности', active: pathname === '/privacy' },
   ].filter(Boolean);
 
   const loginHref =

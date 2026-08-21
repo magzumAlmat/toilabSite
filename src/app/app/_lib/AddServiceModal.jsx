@@ -14,6 +14,7 @@ import {
   catalogItemName, catalogItemCost, bookingCost, serviceTypeOf, fmt,
 } from './events';
 import { RoomPickerModal, VehiclePickerModal } from './BookingPickers';
+import { busyRestaurantIds } from './booking';
 
 const asArray = (res) => (Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : []);
 // Часть эндпоинтов не фильтрует по городу — фильтруем на клиенте (как в мастере).
@@ -41,6 +42,14 @@ export default function AddServiceModal({ eventKind, city, date, existing, lang,
   const [qty, setQty] = useState({});     // { itemId: число }
   const [picker, setPicker] = useState(null); // { item } для гостиницы/салона
   const [adding, setAdding] = useState(null);
+  // Рестораны, занятые на дату мероприятия: помечаем и не даём добавить.
+  const [busyRest, setBusyRest] = useState(new Set());
+
+  useEffect(() => {
+    let alive = true;
+    busyRestaurantIds(date).then((s) => { if (alive) setBusyRest(s); });
+    return () => { alive = false; };
+  }, [date]);
 
   useEffect(() => {
     let alive = true;
@@ -132,6 +141,7 @@ export default function AddServiceModal({ eventKind, city, date, existing, lang,
                 const has = existing?.has(keyOf(item));
                 const price = catalogItemCost(item, cfg.costField);
                 const busy = adding === item.id;
+                const dateTaken = isGuests && busyRest.has(String(item.companyId || item.id));
                 return (
                   <div key={item.id} style={{ background: '#fff', border: '1px solid rgba(212,196,176,0.6)', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: 160 }}>
@@ -141,7 +151,7 @@ export default function AddServiceModal({ eventKind, city, date, existing, lang,
                         {isBooking && ` · ${t('выбор в пикере', 'таңдау пикерде')}`}
                       </div>
                     </div>
-                    {!isBooking && !has && (
+                    {!isBooking && !has && !dateTaken && (
                       <input type="number" min={1} value={qty[item.id] ?? ''} placeholder="1"
                         onChange={(e) => setQty((m) => ({ ...m, [item.id]: e.target.value }))}
                         title={isGuests ? t('Гостей', 'Қонақтар') : t('Количество', 'Саны')}
@@ -149,6 +159,8 @@ export default function AddServiceModal({ eventKind, city, date, existing, lang,
                     )}
                     {has ? (
                       <span style={{ fontSize: 13, fontWeight: 700, color: '#2F7D57' }}>✓ {t('В мероприятии', 'Іс-шарада')}</span>
+                    ) : dateTaken ? (
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#A33' }}>{t('Занят на эту дату', 'Осы күнге бос емес')}</span>
                     ) : (
                       <button type="button" disabled={busy}
                         onClick={() => (isBooking ? setPicker({ item }) : addPlain(item))}

@@ -9,6 +9,8 @@ export const SLUG_TYPE = {
   alcohol: 'alcohol', 'photo-video': 'photo-video', fireworks: 'fireworks',
   suvenirs: 'suvenir', typography: 'typography', equipment: 'technical-equipment-rental',
   hotels: 'hotel', goods: 'good', 'traditional-gift': 'traditionalGift',
+  // Тип из моб. (ITEM_TYPE_META.hallDecoration) — категория каталога есть только в вебе.
+  'hall-decoration': 'hallDecoration',
 };
 
 // Для ресторана и гостиницы количество = число гостей, иначе — количество из корзины.

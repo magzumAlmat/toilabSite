@@ -13,7 +13,7 @@ import {
   buildEventCategoryPayload, buildCategoryServices,
   bookingCost, recommendSelection, fmt,
 } from '../../_lib/events';
-import { checkBookingConflicts, createBookingsForWedding } from '../../_lib/booking';
+import { checkBookingConflicts, createBookingsForWedding, busyRestaurantIds } from '../../_lib/booking';
 import { RoomPickerModal, VehiclePickerModal } from '../../_lib/BookingPickers';
 import { getSpecs, FILE_SEGMENT, fileUrl } from '../../_lib/catalogFields';
 
@@ -173,11 +173,18 @@ export default function NewEvent() {
     }));
     setCache(map);
     cacheCityRef.current = city;
-    const sel = recommendSelection({ categories: cats, budget, guestCount: guests, catalogByCat: map });
+    // Рестораны, уже занятые на выбранную дату, в подбор не берём — иначе
+    // создание упрётся в проверку занятости (checkBookingConflicts).
+    const pickMap = { ...map };
+    if (pickMap.restaurants?.length) {
+      const busy = await busyRestaurantIds(date);
+      if (busy.size) pickMap.restaurants = pickMap.restaurants.filter((r) => !busy.has(String(r.companyId || r.id)));
+    }
+    const sel = recommendSelection({ categories: cats, budget, guestCount: guests, catalogByCat: pickMap });
     setSelected(sel);
     const { totalCost: tc } = buildItemsAndTotals(sel, guests);
     setAutoNote((parseFloat(budget) || 0) >= tc ? 'ok' : 'over');
-  }, [budget, guests, typeKey, city, enabledCats]);
+  }, [budget, guests, typeKey, city, enabledCats, date]);
 
   // Автозапуск: бюджет + гости + отмечены нужные услуги → лоадер → подбор → результат.
   useEffect(() => {

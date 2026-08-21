@@ -20,6 +20,7 @@ export const RESOURCE_TYPES = [
   { type: 'hotel', label: 'Гостиницы', icon: '🏨' },
   { type: 'good', label: 'Товары', icon: '📦' },
   { type: 'traditional-gift', label: 'Традиционные подарки', icon: '🎀' },
+  { type: 'hall-decoration', label: 'Оформление зала', icon: '🎊' },
 ];
 
 const LABEL_BY_TYPE = Object.fromEntries(

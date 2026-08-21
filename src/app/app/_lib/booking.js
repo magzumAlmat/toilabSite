@@ -5,9 +5,24 @@
 import {
   checkRoomAvailability, checkVehicleAvailability,
   createRoomBooking, createTransportBooking, blockRestaurantDate,
-  fetchAllBlockedDays, getRoomBookings, getTransportBookings,
+  getRestaurantsByDate, getRoomBookings, getTransportBookings,
   cancelRoomBooking, cancelTransportBooking,
 } from './apiClient';
+
+// id ресторанов, ЗАНЯТЫХ на дату. Бэкенд отдаёт их одним запросом
+// /api/restaurants-by-date?date=YYYY-MM-DD (проверено: после блока ресторан
+// появляется в ответе). Ошибка сети → пустое множество: не мешаем работать.
+export async function busyRestaurantIds(dateISO) {
+  const ymd = String(dateISO || '').slice(0, 10);
+  if (!ymd) return new Set();
+  try {
+    const res = await getRestaurantsByDate(ymd);
+    const arr = Array.isArray(res?.restaurants) ? res.restaurants : Array.isArray(res?.data) ? res.data : [];
+    return new Set(arr.map((r) => String(r.id ?? r.restaurantId)));
+  } catch {
+    return new Set();
+  }
+}
 import { catalogItemName } from './events';
 
 // Дата + n дней в локальном формате YYYY-MM-DD (без UTC-сдвига, как ymd в моб.).
@@ -37,21 +52,14 @@ export async function checkBookingConflicts(selected, dateISO, t) {
   const restaurants = selected.filter((s) => s.catKey === 'restaurants');
   if (restaurants.length) {
     jobs.push(
-      fetchAllBlockedDays()
-        .then((res) => {
-          const days = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : []);
-          for (const s of restaurants) {
-            const rid = s.item.companyId || s.item.id;
-            const busy = days.some(
-              (d) => String(d.restaurantId) === String(rid) && String(d.date).slice(0, 10) === dateISO,
-            );
-            if (busy) {
-              // Префикс «Занято на выбранную дату» добавляет вызывающая страница.
-              conflicts.push(`${t('Ресторан', 'Мейрамхана')} ${catalogItemName(s.item)}`);
-            }
+      busyRestaurantIds(dateISO).then((busy) => {
+        for (const s of restaurants) {
+          if (busy.has(String(s.item.companyId || s.item.id))) {
+            // Префикс «Занято на выбранную дату» добавляет вызывающая страница.
+            conflicts.push(`${t('Ресторан', 'Мейрамхана')} ${catalogItemName(s.item)}`);
           }
-        })
-        .catch(() => {}), // проверка best-effort: сеть упала — не мешаем создавать
+        }
+      }),
     );
   }
 

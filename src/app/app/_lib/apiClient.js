@@ -113,6 +113,27 @@ export const uploadRoomPhoto = (roomId, file) => {
     .then((r) => r.data);
 };
 
+// ── Редактирование объявления: медиа, авто, номера (контракты моб. ItemEditScreen) ──
+// Удаление файла записи/авто: DELETE /api/files/{fileId} (ItemEditScreen.js:274, :1091).
+export const deleteFile = (fileId) => client.delete(`/api/files/${fileId}`).then((r) => r.data);
+// Авто салона: PUT/DELETE /api/transport-vehicles/{id}; фото — POST …/{id}/photos, поле "file"
+// (ItemEditScreen.js:769-790: в photos JSONB, его читает бронирование).
+export const updateVehicle = (id, data) =>
+  client.put(`/api/transport-vehicles/${id}`, data).then((r) => r.data);
+export const deleteVehicle = (id) => client.delete(`/api/transport-vehicles/${id}`).then((r) => r.data);
+export const uploadVehiclePhoto = (vehicleId, file) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  return client
+    .post(`/api/transport-vehicles/${vehicleId}/photos`, fd, { headers: { 'Content-Type': undefined } })
+    .then((r) => r.data);
+};
+// Номера гостиницы (ItemEditScreen.js:849-898): тип → номер; фото см. uploadRoomPhoto.
+export const createRoomType = (data) => client.post('/api/rooms/room-types', data).then((r) => r.data);
+export const createRoom = (data) => client.post('/api/rooms/rooms', data).then((r) => r.data);
+export const updateRoom = (id, data) => client.put(`/api/rooms/rooms/${id}`, data).then((r) => r.data);
+export const deleteRoom = (id) => client.delete(`/api/rooms/rooms/${id}`).then((r) => r.data);
+
 // ── Мероприятия клиента (weddings/events) ────────────────────────
 export const createWedding = (data) =>
   client.post('/api/weddings/addwedding', data).then((r) => r.data);
@@ -197,6 +218,10 @@ export const checkVehicleAvailability = (vehicleId, startDate, endDate) =>
   client.get(`/api/transport-availability/check/availability?vehicleId=${vehicleId}&startDate=${startDate}&endDate=${endDate}`).then((r) => r.data);
 export const createTransportBooking = (data) =>
   client.post('/api/transport-availability/', data).then((r) => r.data);
+// Рестораны, ЗАНЯТЫЕ на дату (проверено вживую: после блока ресторан появляется
+// в ответе). Формат: { date, restaurants: [...], total }.
+export const getRestaurantsByDate = (date) =>
+  client.get(`/api/restaurants-by-date?date=${date}`).then((r) => r.data);
 // Блок даты ресторана после создания мероприятия.
 export const blockRestaurantDate = (restaurantId, date) =>
   client.post('/api/block', { restaurantId, date }).then((r) => r.data);

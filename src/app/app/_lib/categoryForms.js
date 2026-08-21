@@ -242,6 +242,22 @@ export const CATEGORY_FORMS = {
       f('description', 'Описание', 'Сипаттама', 'textarea'),
     ],
   },
+  // Моб. Item2Screen.js:1011-1063: обязательны salonName, decorationName, cost, address, phone, city,
+  // district + фото. Сегмент файлов — 'hall-decoration' (колонка hall_decoration_id в таблице файлов).
+  hallDecorations: {
+    fileSegment: 'hall-decoration',
+    requirePhoto: true,
+    fields: [
+      f('salonName', 'Название салона / студии', 'Салон атауы', 'text', { req: true }),
+      f('decorationName', 'Наименование оформления', 'Безендіру атауы', 'text', { req: true }),
+      f('decorationType', 'Тип оформления', 'Безендіру түрі', 'text'),
+      f('cost', 'Стоимость, ₸', 'Құны, ₸', 'number', { req: true }),
+      f('district', 'Район', 'Аудан', 'district', { req: true }),
+      f('address', 'Адрес', 'Мекенжай', 'text', { req: true }),
+      f('phone', 'Телефон', 'Телефон', 'tel', { req: true }),
+      f('description', 'Описание', 'Сипаттама', 'textarea'),
+    ],
+  },
   flowers: {
     fileSegment: 'flowers',
     fields: [

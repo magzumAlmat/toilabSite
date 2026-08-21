@@ -12,6 +12,7 @@ export const FILE_SEGMENT = {
   alcohol: 'alcohol', 'photo-video': 'photo-video-service', fireworks: 'fireworks-service',
   suvenirs: 'suvenirs', typography: 'typography', equipment: 'technical-equipment-rental',
   hotels: 'hotel', goods: 'good', 'traditional-gift': 'traditionalgift',
+  'hall-decoration': 'hall-decoration',
 };
 
 // URL картинки по полю path ("uploads/...") — через same-origin прокси.
@@ -21,7 +22,7 @@ export const fileUrl = (path) => {
   return `/toilab-api/${String(path).replace(/^\/+/, '')}`;
 };
 
-const NAME_FIELDS = ['name', 'title', 'fullName', 'companyName', 'studioName', 'teamName', 'storeName', 'salonName', 'flowerName', 'itemName', 'carName', 'item_name'];
+const NAME_FIELDS = ['name', 'title', 'fullName', 'companyName', 'studioName', 'teamName', 'storeName', 'salonName', 'flowerName', 'itemName', 'decorationName', 'carName', 'item_name'];
 const PRICE_FIELDS = ['averageCost', 'cost', 'price', 'pricePerDay', 'pricePerShow', 'minPrice', 'priceFrom', 'pricePerHour', 'pricePerMinute', 'minBudget'];
 
 const MONEY_FIELDS = new Set(['averageCost', 'cost', 'price', 'pricePerDay', 'pricePerShow', 'pricePerHour', 'pricePerMinute', 'minPrice', 'priceFrom', 'minBudget', 'maxBudget', 'total_cost', 'budget']);
@@ -39,6 +40,8 @@ const FIELD_LABELS = {
   pricePerMinute: ['Цена за минуту', 'Минутына бағасы'],
   minBudget: ['Мин. бюджет', 'Мин. бюджет'],
   minRentalHours: ['Мин. аренда, ч', 'Мин. жалдау, сағ'],
+  decorationName: ['Оформление', 'Безендіру'],
+  decorationType: ['Тип оформления', 'Безендіру түрі'],
   workingHours: ['Часы работы', 'Жұмыс уақыты'],
   plateNumber: ['Гос. номер', 'Мемлекеттік нөмір'],
   features: ['Особенности', 'Ерекшеліктері'],
@@ -103,7 +106,7 @@ const fmtMoney = (v) => `${Number(v).toLocaleString('ru-RU')} ₸`;
 export function getName(item, fallback = '—') {
   // Составное имя для салонов (salonName — flowerName/itemName), иначе первое непустое.
   const base = item?.salonName || item?.storeName;
-  const sub = item?.flowerName || item?.itemName;
+  const sub = item?.flowerName || item?.itemName || item?.decorationName;
   if (base && sub) return `${base} — ${sub}`;
   return firstNonEmpty(item, NAME_FIELDS) ?? fallback;
 }

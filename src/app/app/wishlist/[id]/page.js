@@ -1,11 +1,16 @@
 'use client';
 
 // Публичный список подарков мероприятия — для гостей (без аккаунта).
-// GET /api/weddings/public/{id} + /api/wishlist/public/wedding/{id}; резерв — reservebyunknown.
+// Свадьбы: GET /api/weddings/public/{id} + /api/wishlist/public/wedding/{id}.
+// Остальные типы (event-category, ?src=ec): GET /api/event-category/{id} +
+// /api/wishlist/public/eventcategory/{id}. Резерв в обоих случаях — reservebyunknown.
 import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useApp } from '../../_lib/AppContext';
-import { getPublicWedding, getPublicWeddingWishlist, reserveWishByUnknown } from '../../_lib/apiClient';
+import {
+  getPublicWedding, getPublicWeddingWishlist, reserveWishByUnknown,
+  getEventCategory, getPublicEventCategoryWishlist,
+} from '../../_lib/apiClient';
 
 const unwrap = (res) => res?.data ?? res ?? null;
 const asArray = (res) => (Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : []);
@@ -19,14 +24,17 @@ export default function PublicWishlist() {
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
 
+  // ?src=ec — мероприятие лежит в event-category (id у источников независимые).
+  const isCat = useSearchParams().get('src') === 'ec';
+
   const loadList = useCallback(async () => {
-    setItems(asArray(await getPublicWeddingWishlist(id)));
-  }, [id]);
+    setItems(asArray(await (isCat ? getPublicEventCategoryWishlist(id) : getPublicWeddingWishlist(id))));
+  }, [id, isCat]);
 
   useEffect(() => {
     (async () => {
       try {
-        try { setEv(unwrap(await getPublicWedding(id))); } catch { /* инфо необязательна */ }
+        try { setEv(unwrap(await (isCat ? getEventCategory(id) : getPublicWedding(id)))); } catch { /* инфо необязательна */ }
         await loadList();
       } catch (err) {
         setError(err.message || t('Не удалось загрузить список', 'Тізімді жүктеу мүмкін болмады'));
@@ -34,7 +42,7 @@ export default function PublicWishlist() {
         setLoading(false);
       }
     })();
-  }, [id, loadList, t]);
+  }, [id, isCat, loadList, t]);
 
   const reserve = async (wid) => {
     const name = prompt(t('Ваше имя (кто дарит):', 'Сіздің атыңыз:'));

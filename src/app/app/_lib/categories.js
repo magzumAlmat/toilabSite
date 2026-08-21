@@ -20,6 +20,8 @@ export const CATEGORIES = [
   { slug: 'hotels', icon: '🏨', ru: 'Гостиницы', kz: 'Қонақ үйлер', list: '/api/hotels', detail: (id) => `/api/hotel/${id}` },
   { slug: 'goods', icon: '📦', ru: 'Товары', kz: 'Тауарлар', list: '/api/goods', detail: (id) => `/api/goodbyid/${id}` },
   { slug: 'traditional-gift', icon: '🎀', ru: 'Традиционные подарки', kz: 'Дәстүрлі сыйлықтар', list: '/api/traditional-gift', detail: (id) => `/api/traditional-gift/${id}` },
+  // Категория есть в мобильном приложении (resources.hallDecorations) — в вебе её не было.
+  { slug: 'hall-decoration', icon: '🎊', ru: 'Оформление зала', kz: 'Зал безендіру', list: '/api/hall-decorations', detail: (id) => `/api/hall-decorations/${id}` },
 ];
 
 export const CATEGORY_BY_SLUG = Object.fromEntries(CATEGORIES.map((c) => [c.slug, c]));

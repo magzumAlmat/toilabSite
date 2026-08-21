@@ -19,6 +19,66 @@
 
 ## Журнал
 
+### 2026-08-21 — занятые рестораны не предлагаются (пункт 9 аудита, мелочи)
+- `restaurants-by-date`: живой пробой выяснена семантика — эндпоинт отдаёт рестораны, ЗАНЯТЫЕ на дату
+  (после `POST /api/block` ресторан появляется в ответе). Формат `{date, restaurants:[…], total}`.
+  `apiClient` +`getRestaurantsByDate`, `booking.js` +`busyRestaurantIds(dateISO)` → Set id.
+- `checkBookingConflicts` переведён с `fetchAllBlockedDays` (выкачивал все блокировки) на этот запрос —
+  точнее и легче. Автоподбор в мастере исключает занятые рестораны (deps эффекта +`date`), в модалке
+  добавления услуги занятый помечен «Занят на эту дату», кнопка и поле количества скрыты.
+- ℹ️ `PATCH /weddings/{id}/budget` и `/event-category/{id}/budget` — НЕ нужны: проверено вживую, что
+  обычный `PUT` уже сохраняет бюджет (777 000 после PUT в обоих случаях). Пункт аудита оказался ложным
+  пробелом, мёртвый метод не добавлялся.
+- ℹ️ `/api/services` и `/api/placeholder-service` не переносились: в моб. объявлены, но нигде не вызываются.
+- ✅ Проверено: блок на дату → автоподбор «Выбрано: 0»; смена на свободную дату → ресторан подобран
+  (300 000 ₸); в модалке добавления — «Занят на эту дату». Все тест-данные и блокировки удалены.
+
+### 2026-08-21 — «Оформление зала» и товары (пункты 7-8 аудита)
+- **Оформление зала (hallDecorations)** — категория была в моб., в вебе отсутствовала:
+  - `supplier.js` +группа (`/api/hall-decorations`, get/upd/del по id) — ключ в `/supplier/listings`
+    называется `hallDecorations` (проверено живым ответом);
+  - `categoryForms.js` +форма: salonName, decorationName, decorationType, cost, district, address,
+    phone, description + обязательное фото (валидация из моб. Item2Screen.js:1011-1063),
+    fileSegment `hall-decoration`;
+  - `categories.js` +категория публичного каталога `/app/catalog/hall-decoration` (стало 17);
+  - `catalogFields.js`: `decorationName` в NAME_FIELDS и в составное имя «Салон — Оформление»,
+    подписи decorationName/decorationType, FILE_SEGMENT; `cart.js` SLUG_TYPE → `hallDecoration`;
+  - `moderation/resources.js` +тип `hall-decoration` (иначе записи не видны модератору);
+  - `supplier.js listingName` расширен (salonName/decorationName/studioName/teamName/itemName) —
+    иначе карточка в кабинете показывала «—».
+  - ✅ Проверено: категория в форме создания (17 в списке), POST /api/hall-decorations → 201,
+    карточка в кабинете «Тест декор студия · 50 000 ₸ · На модерации», форма редактирования
+    предзаполнена, DELETE 204. Тест-запись удалена.
+- **Товары**: правка/удаление уже были доступны через общую форму; 🐞 найден баг — у товаров из моб.
+  `category: 'Miscellaneous'` (кастомные подарки) нет в списке опций, селект был пуст и сохранение
+  затёрло бы категорию. Теперь сохранённое значение показывается отдельной опцией (как у района).
+  ✅ Проверено: правка товара (PUT /api/updategoodbyid/{id} → 200, cost и вложенные specs обновились),
+  DELETE /api/removegoodbyid/{id} → 204. Тест-товар удалён.
+- **Публичный wishlist**: `/app/wishlist/{id}?src=ec` теперь работает и для event-category
+  (`/api/wishlist/public/eventcategory/{id}` + инфо из `/api/event-category/{id}`).
+- ⚠️ Превью в этой среде периодически само перезагружается на `/app` в момент submit — из-за этого
+  часть форм проверялась запросами к тем же эндпоинтам с теми же payload, что строит форма.
+
+### 2026-08-21 — полное редактирование объявления: медиа, авто, номера (пункт 6 аудита)
+- `supplier/edit/[group]/[id]/page.js` переписан (паритет с моб. ItemEditScreen):
+  - **фото/видео записи**: текущие (`GET /api/{seg}/{id}/files` → миниатюры через `/toilab-api/`),
+    пометка на удаление ×/↺ (`DELETE /api/files/{id}` при сохранении), добавление новых (`POST …/files`);
+  - **авто салона** (transport): `GET /api/transport-vehicles?transportId=`, правка `PUT /api/transport-vehicles/{id}`,
+    удаление, добавление (`POST`), фото `POST …/{id}/photos` (JSONB photos — его читает бронирование);
+  - **номера гостиницы** (hotels): `GET /api/rooms/hotels/{id}/rooms`, правка `PUT /api/rooms/rooms/{id}`
+    (room_type_id сохраняется), удаление, добавление (сначала `POST /api/rooms/room-types`, затем номер),
+    фото `POST /api/rooms/rooms/{id}/photos`. Тип/вместимость берутся из `RoomType`.
+  - Удаления отдельных фото авто/номера в моб. нет — не делаем. Все операции после PUT полей, по одному.
+- `apiClient.js` +`deleteFile`, `updateVehicle`, `deleteVehicle`, `uploadVehiclePhoto`, `createRoomType`,
+  `createRoom`, `updateRoom`, `deleteRoom`.
+- 🐞 Поймано при проверке: чтение `e.target.files` внутри updater-колбэка `setState(fs => …)` — React
+  выполняет его позже, когда `e.target.value = ''` уже очистил список → файл «не выбирался». Файлы
+  захватываются ДО setState (в `supplier/new` так и было).
+- ✅ Проверено (боевой бэкенд, ресторан 17 поставщика): форма предзаполнена, текущее фото видно; добавление
+  тест-файла → `files` 2 (id 140); пометка × → сохранение → `DELETE /api/files/140`, снова 1 файл (исходный
+  139 не тронут). Ветки авто/номеров живьём не проверены — у аккаунта нет салонов/гостиниц; контракты
+  сверены с моб. ItemEditScreen.js:769-790, :849-898.
+
 ### 2026-08-21 — освобождение броней/дат при удалении мероприятия и услуги (пункт 5 аудита)
 - Уточнение аудита: моб. Item3Screen НЕ показывает брони в деталке — оно ОТМЕНЯЕТ связанные брони
   номеров/авто при удалении категории (:2633-2657) и услуги (:2979), матчит по дате + room_ids

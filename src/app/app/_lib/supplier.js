@@ -24,6 +24,8 @@ export const SUPPLIER_GROUPS = [
   { key: 'hotels', icon: '🏨', ru: 'Гостиницы', kz: 'Қонақ үйлер', create: '/api/hotel', del: (id) => `/api/hotel/${id}`, get: (id) => `/api/hotel/${id}`, upd: (id) => `/api/hotel/${id}` },
   { key: 'goods', icon: '📦', ru: 'Товары', kz: 'Тауарлар', create: '/api/goods', del: (id) => `/api/removegoodbyid/${id}`, get: (id) => `/api/goodbyid/${id}`, upd: (id) => `/api/updategoodbyid/${id}` },
   { key: 'traditionalGifts', icon: '🎀', ru: 'Традиционные подарки', kz: 'Дәстүрлі сыйлықтар', create: '/api/traditional-gift', del: (id) => `/api/traditional-gift/${id}`, get: (id) => `/api/traditional-gift/${id}`, upd: (id) => `/api/traditional-gift/${id}` },
+  // Моб. api.js:70 — resources.hallDecorations { path: 'hall-decorations' }; ключ в /supplier/listings — hallDecorations.
+  { key: 'hallDecorations', icon: '🎊', ru: 'Оформление зала', kz: 'Зал безендіру', create: '/api/hall-decorations', del: (id) => `/api/hall-decorations/${id}`, get: (id) => `/api/hall-decorations/${id}`, upd: (id) => `/api/hall-decorations/${id}` },
 ];
 
 export const GROUP_BY_KEY = Object.fromEntries(SUPPLIER_GROUPS.map((g) => [g.key, g]));
@@ -41,6 +43,6 @@ export function flattenListings(data = {}) {
 }
 
 // Универсальные геттеры — имена полей различаются между ресурсами.
-export const listingName = (i) => pick(i, ['name', 'companyName', 'storeName', 'fullName', 'title'], '—');
+export const listingName = (i) => pick(i, ['name', 'companyName', 'storeName', 'salonName', 'decorationName', 'studioName', 'teamName', 'itemName', 'fullName', 'title'], '—');
 export const listingPrice = (i) => pick(i, ['cost', 'price', 'averageCost', 'pricePerShow', 'minPrice'], '');
 export const listingSub = (i) => pick(i, ['city', 'address', 'district'], '');

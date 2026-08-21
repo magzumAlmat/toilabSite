@@ -132,6 +132,53 @@ export const updateWeddingRemainingBalance = (id, remaining_balance) =>
 export const updateWeddingPaidAmount = (id, paid_amount) =>
   client.patch(`/api/weddings/${id}/paid_amount`, { paid_amount }).then((r) => r.data);
 
+// ── Мероприятия-«категории» (event-category) ─────────────────────
+// Все НЕсвадебные типы (корпоратив, выпускной, конференция, предсвадебная
+// вечеринка, семейное торжество) моб. app сохраняет сюда, а не в weddings
+// (CorporateEventScreen.js:3122, PromScreen.js:2284, ConferencesEventScreen.js:1840).
+// Проверено на боевом бэкенде: GET /api/event-category/{id} → 200, тип события
+// лежит в поле event_kind, услуги — в EventServices[] (эндпоинт /services
+// отдаёт services: [] даже когда услуги есть, поэтому читаем из объекта).
+export const createEventCategory = (data) =>
+  client.post('/api/event-category', data).then((r) => r.data);
+export const getEventCategories = () =>
+  client.get('/api/event-categories').then((r) => r.data);
+export const getEventCategory = (id) =>
+  client.get(`/api/event-category/${id}`).then((r) => r.data);
+export const getEventCategoryWithServices = (id) =>
+  client.get(`/api/event-category/${id}/services`).then((r) => r.data);
+export const updateEventCategory = (id, data) =>
+  client.put(`/api/event-category/${id}`, data).then((r) => r.data);
+export const deleteEventCategory = (id) =>
+  client.delete(`/api/event-category/${id}`).then((r) => r.data);
+export const updateEventCategoryTotalCost = (id, total_cost) =>
+  client.patch(`/api/event-category/${id}/total_cost`, { total_cost }).then((r) => r.data);
+export const updateEventCategoryPaidAmount = (id, paid_amount) =>
+  client.patch(`/api/event-category/${id}/paid_amount`, { paid_amount }).then((r) => r.data);
+export const updateEventCategoryRemainingBalance = (id, remaining_balance) =>
+  client.patch(`/api/event-category/${id}/remaining_balance`, { remaining_balance }).then((r) => r.data);
+export const updateEventCategoryBudget = (id, budget) =>
+  client.patch(`/api/event-category/${id}/budget`, { budget }).then((r) => r.data);
+// Одна услуга: { serviceId, serviceType, quantity, cost, room_ids }.
+export const addServiceToCategory = (categoryId, data) =>
+  client.post(`/api/event-category/${categoryId}/service`, data).then((r) => r.data);
+// Пачкой: { service_ids: [{ serviceId, serviceType, quantity, room_ids }] }.
+export const addServicesToCategory = (categoryId, data) =>
+  client.post(`/api/event-category/${categoryId}/services`, data).then((r) => r.data);
+// Заменить набор услуг целиком (тот же формат, что addServicesToCategory).
+export const updateServicesForCategory = (categoryId, data) =>
+  client.put(`/api/event-category/${categoryId}/services`, data).then((r) => r.data);
+// ⚠️ serviceType шлём в том же виде, что и при добавлении (PascalCase):
+// бэкенд отвечает 204 на 'Restaurant' и 404 на 'restaurant' (проверено вживую).
+export const removeServiceFromCategory = (categoryId, serviceId, serviceType) =>
+  client
+    .delete(`/api/event-category/${categoryId}/service/${serviceId}`, { data: { serviceId, serviceType } })
+    .then((r) => r.data);
+
+// Гости мероприятия (RSVP «Я буду») — для хоста.
+export const getEventGuests = (eventType, eventId) =>
+  client.get(`/api/events/${eventType}/${eventId}/guests`).then((r) => r.data);
+
 // ── Бронирование номеров/авто (контракты из моб. api.js) ─────────
 // Номера отеля: GET /api/rooms/hotels/{hotelId}/rooms.
 export const getRoomsByHotel = (hotelId) =>
@@ -159,12 +206,13 @@ export const fetchAllBlockedDays = () =>
   client.get('/api/all-blocked-days').then((r) => r.data);
 export const unblockRestaurantDate = (restaurantId, date) =>
   client.delete('/api/block', { data: { restaurantId, date } }).then((r) => r.data);
-export const getRoomBookings = () =>
-  client.get('/api/room-availability/').then((r) => r.data);
+// query — необязательная строка фильтра (моб. передаёт `date=YYYY-MM-DD`).
+export const getRoomBookings = (query) =>
+  client.get(`/api/room-availability/${query ? `?${query}` : ''}`).then((r) => r.data);
 export const cancelRoomBooking = (bookingReference) =>
   client.patch(`/api/room-availability/${bookingReference}/cancel`).then((r) => r.data);
-export const getTransportBookings = () =>
-  client.get('/api/transport-availability/').then((r) => r.data);
+export const getTransportBookings = (query) =>
+  client.get(`/api/transport-availability/${query ? `?${query}` : ''}`).then((r) => r.data);
 export const cancelTransportBooking = (bookingReference) =>
   client.patch(`/api/transport-availability/${bookingReference}/cancel`).then((r) => r.data);
 
@@ -177,6 +225,11 @@ export const getWeddingWishlist = (id) =>
   client.get(`/api/wishlist/wedding/${id}`).then((r) => r.data);
 export const getPublicWeddingWishlist = (id) =>
   client.get(`/api/wishlist/public/wedding/${id}`).then((r) => r.data);
+// Те же списки, но для мероприятий-«категорий» (несвадебные типы).
+export const getEventCategoryWishlist = (id) =>
+  client.get(`/api/wishlist/eventcategory/${id}`).then((r) => r.data);
+export const getPublicEventCategoryWishlist = (id) =>
+  client.get(`/api/wishlist/public/eventcategory/${id}`).then((r) => r.data);
 export const reserveWish = (id) =>
   client.patch(`/api/wishlist/${id}/reserve`, {}).then((r) => r.data);
 export const reserveWishByUnknown = (id, name) =>

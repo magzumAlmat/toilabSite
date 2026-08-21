@@ -1,5 +1,6 @@
-// Создание мероприятий клиентом. Все типы шлют на один эндпоинт
-// POST /api/weddings/addwedding (как в мобильном app), различаются набором категорий.
+// Создание мероприятий клиентом. Свадьба уходит в POST /api/weddings/addwedding,
+// остальные типы — в POST /api/event-category (как в мобильном app, см. storage
+// у EVENT_TYPES). Типы различаются также набором категорий.
 // Контракт payload и type/costField — из src/screens/HomeScreen.js (стр. 1970-1978, 2891-2912).
 
 // Категория мероприятия → как услуга попадает в items[]:
@@ -31,13 +32,52 @@ export const EVENT_CATEGORIES = {
 // CreateTraditionalFamilyEventScreen / PreWeddingScreen / PromScreen). Названия — из навигации.
 // У «семейного» в моб. app есть ещё нац.костюмы/музыканты/фотографы/видеографы/декор — у них
 // нет каталожных эндпоинтов на бэкенде, поэтому в вебе не подключены.
+// storage — куда мероприятие сохраняется на бэкенде (паритет с моб. app):
+//   'wedding'       → POST /api/weddings/addwedding (items[] в теле);
+//   'eventCategory' → POST /api/event-category, затем услуги по одной
+//                     через POST /api/event-category/{id}/service.
+// Только свадьба идёт в weddings; остальные типы в моб. app сохраняются как
+// event-category (CorporateEventScreen.js:3122, PromScreen.js:2284,
+// PreWeddingScreen.js:2704, CreateTraditionalFamilyEventScreen.js:2339).
 export const EVENT_TYPES = [
-  { key: 'wedding',     ru: 'Свадьба',                          kz: 'Той',                       icon: '💍', categories: ['restaurants', 'flowers', 'cakes', 'tamada', 'program', 'jewelry', 'traditional-gift', 'transport', 'clothing'] },
-  { key: 'traditional', ru: 'День рождения, семейное торжество', kz: 'Туған күн, отбасылық той',  icon: '🎉', categories: ['restaurants', 'hotels', 'tamada', 'program', 'flowers', 'transport', 'cakes', 'jewelry', 'traditional-gift'] },
-  { key: 'corporate',   ru: 'Корпоративное мероприятие',         kz: 'Корпоративтік іс-шара',     icon: '🏢', categories: ['transport', 'restaurants', 'hotels', 'cakes', 'tamada', 'program', 'equipment', 'jewelry', 'flowers'] },
-  { key: 'prewedding',  ru: 'Вечеринка перед свадьбой',          kz: 'Үйлену тойы алдындағы кеш', icon: '🥂', categories: ['transport', 'restaurants', 'hotels', 'cakes', 'tamada', 'program', 'equipment', 'jewelry', 'flowers', 'photo-video', 'suvenirs', 'typography'] },
-  { key: 'prom',        ru: 'Выпускной',                         kz: 'Бітіру кеші',               icon: '🎓', categories: ['photo-video', 'tamada', 'restaurants', 'transport', 'suvenirs', 'fireworks', 'equipment', 'typography'] },
+  { key: 'wedding',     storage: 'wedding',       ru: 'Свадьба',                          kz: 'Той',                       icon: '💍', categories: ['restaurants', 'flowers', 'cakes', 'tamada', 'program', 'jewelry', 'traditional-gift', 'transport', 'clothing'] },
+  // apiType — строка, которую ждёт бэкенд в поле type (сохраняется как event_kind).
+  // У «семейного» она отличается от ключа: моб. шлёт 'traditional-family'
+  // (CreateTraditionalFamilyEventScreen.js:2318), и на боевом бэкенде записи
+  // действительно лежат с event_kind: "traditional-family".
+  { key: 'traditional', storage: 'eventCategory', apiType: 'traditional-family', ru: 'День рождения, семейное торжество', kz: 'Туған күн, отбасылық той',  icon: '🎉', categories: ['restaurants', 'hotels', 'tamada', 'program', 'flowers', 'transport', 'cakes', 'jewelry', 'traditional-gift'] },
+  { key: 'corporate',   storage: 'eventCategory', ru: 'Корпоративное мероприятие',         kz: 'Корпоративтік іс-шара',     icon: '🏢', categories: ['transport', 'restaurants', 'hotels', 'cakes', 'tamada', 'program', 'equipment', 'jewelry', 'flowers'] },
+  { key: 'prewedding',  storage: 'eventCategory', ru: 'Вечеринка перед свадьбой',          kz: 'Үйлену тойы алдындағы кеш', icon: '🥂', categories: ['transport', 'restaurants', 'hotels', 'cakes', 'tamada', 'program', 'equipment', 'jewelry', 'flowers', 'photo-video', 'suvenirs', 'typography'] },
+  { key: 'prom',        storage: 'eventCategory', ru: 'Выпускной',                         kz: 'Бітіру кеші',               icon: '🎓', categories: ['photo-video', 'tamada', 'restaurants', 'transport', 'suvenirs', 'fireworks', 'equipment', 'typography'] },
+  // Набор — typesMapping моб. ConferencesEventScreen.js:93-103; type 'conference' (там же :1834).
+  { key: 'conference',  storage: 'eventCategory', ru: 'Конференция',                       kz: 'Конференция',               icon: '🎙️', categories: ['transport', 'restaurants', 'cakes', 'tamada', 'program', 'equipment', 'flowers', 'jewelry'] },
 ];
+
+// slug категории → serviceType в event-category (PascalCase, НЕ равен type из
+// items[] для weddings). Карты в моб. экранах слегка расходятся между собой
+// (ConferencesEventScreen шлёт 'TransportVehicle' вместо 'Transport',
+// CreateTraditionalFamilyEventScreen — 'TraditionalGifts'); берём вариант,
+// который совпадает в большинстве экранов (Corporate/PreWedding/Prom).
+export const SERVICE_TYPE = {
+  restaurants: 'Restaurant',
+  hotels: 'Hotel',
+  transport: 'Transport',
+  cakes: 'Cakes',
+  tamada: 'Tamada',
+  program: 'Program',
+  flowers: 'Flowers',
+  jewelry: 'Jewelry',
+  equipment: 'TechnicalEquipmentRental',
+  typography: 'Typography',
+  suvenirs: 'Suvenir',
+  'photo-video': 'PhotoVideoService',
+  fireworks: 'FireworksService',
+  'traditional-gift': 'TraditionalGifts',
+  // clothing в моб. картах serviceTypeMap отсутствует — одежда есть только у
+  // свадьбы, а свадьба сохраняется в weddings, так что сюда не попадает.
+};
+
+export const serviceTypeOf = (catKey) => SERVICE_TYPE[catKey] || EVENT_CATEGORIES[catKey]?.type || catKey;
 
 export const EVENT_TYPE_BY_KEY = Object.fromEntries(EVENT_TYPES.map((e) => [e.key, e]));
 
@@ -135,6 +175,37 @@ export function buildWeddingPayload({ name, date, hostId, budget, selected, gues
   };
 }
 
+// Тело POST /api/event-category (моб. CorporateEventScreen.js:3093).
+// Бэкенд сохраняет type в поле event_kind (проверено: GET /api/event-category/1
+// → event_kind: "prom"). Услуги сюда не входят — добавляются отдельно.
+export function buildEventCategoryPayload({ name, date, budget, selected, guestCount, typeKey }) {
+  const { totalCost } = buildItemsAndTotals(selected, guestCount);
+  const budgetVal = parseFloat(budget) || 0;
+  return {
+    name: (name || '').trim(),
+    date, // "YYYY-MM-DD"
+    budget: budgetVal,
+    total_cost: totalCost,
+    paid_amount: 0,
+    remaining_balance: budgetVal - totalCost,
+    guestCount: parseInt(guestCount, 10) || 0,
+    type: EVENT_TYPE_BY_KEY[typeKey]?.apiType || typeKey,
+  };
+}
+
+// Услуги мероприятия-«категории»: по одной на POST /api/event-category/{id}/service.
+// Количество/room_ids считаются той же логикой, что и items[] для weddings.
+export function buildCategoryServices(selected, guestCount) {
+  const { items } = buildItemsAndTotals(selected, guestCount);
+  return selected.map(({ catKey }, i) => ({
+    serviceId: items[i].id,
+    serviceType: serviceTypeOf(catKey),
+    quantity: items[i].quantity,
+    cost: items[i].totalCost,
+    room_ids: items[i].room_ids || [],
+  }));
+}
+
 // Типовые «веса» категорий для распределения бюджета (относительные доли).
 // Ресторан — крупнейшая статья, далее ведущий, цветы и т.д.
 export const CATEGORY_WEIGHTS = {
@@ -209,6 +280,28 @@ export const ITEM_TYPE_META = {
   fireworks:    { ru: 'Фейерверки',           kz: 'Фейерверктер',        icon: '🎆', detail: (id) => `/api/fireworks-services/${id}`, seg: 'fireworks-service' },
   good:         { ru: 'Товары',               kz: 'Тауарлар',            icon: '📦', detail: (id) => `/api/goodbyid/${id}`, seg: 'good' },
   alcohol:      { ru: 'Алкоголь',             kz: 'Алкоголь',            icon: '🍷', detail: (id) => `/api/alcohol/${id}`, seg: 'alcohol' },
+};
+
+// serviceType из EventServices → ключ ITEM_TYPE_META (для названия/иконки/детали).
+// Включены и «чужие» варианты, которые пишет моб. app: TransportVehicle
+// (ConferencesEventScreen) и TraditionalGifts (CreateTraditionalFamilyEventScreen).
+export const ITEM_TYPE_BY_SERVICE_TYPE = {
+  Restaurant: 'restaurant',
+  Hotel: 'hotel',
+  Transport: 'transport',
+  TransportVehicle: 'transport',
+  Cakes: 'cake',
+  Tamada: 'tamada',
+  Program: 'program',
+  Flowers: 'flowers',
+  Jewelry: 'jewelry',
+  TechnicalEquipmentRental: 'technical-equipment-rental',
+  Typography: 'typography',
+  Suvenir: 'suvenir',
+  PhotoVideoService: 'photo-video',
+  FireworksService: 'fireworks',
+  TraditionalGifts: 'traditionalGift',
+  Clothing: 'clothing',
 };
 
 // Формат суммы с разделителями (₸).

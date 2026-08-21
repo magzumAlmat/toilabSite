@@ -6,10 +6,11 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '../../_lib/AppContext';
-import { fetchList, createWedding, getFiles } from '../../_lib/apiClient';
+import { fetchList, createWedding, getFiles, createEventCategory, addServiceToCategory } from '../../_lib/apiClient';
 import {
   EVENT_TYPES, EVENT_TYPE_BY_KEY, EVENT_CATEGORIES, BOOKING_CATEGORIES,
   catalogItemName, catalogItemCost, buildItemsAndTotals, buildWeddingPayload,
+  buildEventCategoryPayload, buildCategoryServices,
   bookingCost, recommendSelection, fmt,
 } from '../../_lib/events';
 import { checkBookingConflicts, createBookingsForWedding } from '../../_lib/booking';
@@ -80,6 +81,10 @@ export default function NewEvent() {
   const evType = EVENT_TYPE_BY_KEY[typeKey];
   const cacheRef = useRef({});
   useEffect(() => { cacheRef.current = cache; }, [cache]);
+  // Кэш каталога принадлежит городу: списки уже отфильтрованы по нему
+  // (filterCity). После смены города прежние списки невалидны — без сброса
+  // подбор считал по услугам старого города (или по пустому списку).
+  const cacheCityRef = useRef(city);
   const { totalCost } = useMemo(() => buildItemsAndTotals(selected, guests), [selected, guests]);
   const budgetVal = parseFloat(budget) || 0;
   const remain = budgetVal - totalCost;
@@ -91,13 +96,16 @@ export default function NewEvent() {
   const openCategory = useCallback(async (catKey) => {
     if (openCat === catKey) { setOpenCat(null); return; }
     setOpenCat(catKey);
-    if (cache[catKey]) return;
+    const stale = cacheCityRef.current !== city;
+    if (!stale && cache[catKey]) return;
     setLoadingCat(catKey);
     try {
       const res = await fetchList(EVENT_CATEGORIES[catKey].list);
-      setCache((c) => ({ ...c, [catKey]: filterCity(asArray(res), city) }));
+      setCache((c) => ({ ...(stale ? {} : c), [catKey]: filterCity(asArray(res), city) }));
+      cacheCityRef.current = city;
     } catch {
-      setCache((c) => ({ ...c, [catKey]: [] }));
+      setCache((c) => ({ ...(stale ? {} : c), [catKey]: [] }));
+      cacheCityRef.current = city;
     } finally {
       setLoadingCat(null);
     }
@@ -157,12 +165,14 @@ export default function NewEvent() {
     const cats = allCats
       .filter((c) => !BOOKING_CATEGORIES.has(c))
       .filter((c) => enabledCats.has(c));
-    const map = { ...cacheRef.current };
+    // Сменился город — кэш прошлого города выбрасываем и грузим списки заново.
+    const map = cacheCityRef.current !== city ? {} : { ...cacheRef.current };
     await Promise.all(cats.map(async (c) => {
       if (map[c]) return;
       try { map[c] = filterCity(asArray(await fetchList(EVENT_CATEGORIES[c].list)), city); } catch { map[c] = []; }
     }));
     setCache(map);
+    cacheCityRef.current = city;
     const sel = recommendSelection({ categories: cats, budget, guestCount: guests, catalogByCat: map });
     setSelected(sel);
     const { totalCost: tc } = buildItemsAndTotals(sel, guests);
@@ -200,12 +210,26 @@ export default function NewEvent() {
         setBusy(false);
         return;
       }
-      // 2. Создание мероприятия.
-      const payload = buildWeddingPayload({ name, date, hostId: user?.id, budget, selected, guestCount: guests });
-      const res = await createWedding(payload);
+      // 2. Создание мероприятия. Свадьба → weddings/addwedding (услуги в items[]);
+      //    остальные типы → event-category, услуги добавляются по одной (как в моб. app).
+      let eventId;
+      if (EVENT_TYPE_BY_KEY[typeKey]?.storage === 'eventCategory') {
+        const res = await createEventCategory(
+          buildEventCategoryPayload({ name, date, budget, selected, guestCount: guests, typeKey })
+        );
+        eventId = res?.id ?? res?.data?.id;
+        if (!eventId) throw new Error(t('Сервер не вернул id мероприятия', 'Сервер іс-шара id қайтармады'));
+        for (const svc of buildCategoryServices(selected, guests)) {
+          await addServiceToCategory(eventId, svc);
+        }
+      } else {
+        const res = await createWedding(
+          buildWeddingPayload({ name, date, hostId: user?.id, budget, selected, guestCount: guests })
+        );
+        eventId = res?.id ?? res?.wedding?.id ?? res?.data?.id;
+      }
       // 3. Брони номеров/авто + блок даты ресторана (best-effort, как в моб.).
-      const weddingId = res?.id ?? res?.wedding?.id ?? res?.data?.id;
-      const failures = await createBookingsForWedding(selected, date, weddingId);
+      const failures = await createBookingsForWedding(selected, date, eventId);
       if (failures.length) {
         alert(`${t('Мероприятие создано, но не все брони прошли', 'Іс-шара жасалды, бірақ кейбір брондар өтпеді')}: ${failures.join(', ')}`);
       }

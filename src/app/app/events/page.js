@@ -1,14 +1,17 @@
 'use client';
 
-// Кабинет клиента: список созданных мероприятий (GET /api/getallweddings).
+// Кабинет клиента: список созданных мероприятий. Источников два — свадьбы
+// (GET /api/getallweddings) и «категории мероприятий» (GET /api/event-categories),
+// куда мобильное приложение и веб сохраняют все остальные типы.
 // Тёплый дизайн в тонах /about: герой-баннер + карточки с прогресс-баром бюджета.
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, CalendarRange, Wallet, ChevronRight, Trash2, PartyPopper } from 'lucide-react';
 import { useApp } from '../_lib/AppContext';
-import { getWeddings, deleteWedding } from '../_lib/apiClient';
-import { fmt } from '../_lib/events';
+import { getWeddings, deleteWedding, getEventCategories, deleteEventCategory, getWedding, getEventCategory, unblockRestaurantDate } from '../_lib/apiClient';
+import { fmt, ITEM_TYPE_BY_SERVICE_TYPE } from '../_lib/events';
+import { cancelBookingsForRows } from '../_lib/booking';
 
 function asArray(res) {
   if (Array.isArray(res)) return res;
@@ -22,6 +25,8 @@ function asArray(res) {
 // нет — тогда бейджа нет, ничего не выдумываем.
 const EVENT_KIND_LABELS = {
   'traditional-family': { ru: 'День рождения', kz: 'Туған күн' },
+  traditional:          { ru: 'День рождения', kz: 'Туған күн' },
+  wedding:              { ru: 'Свадьба', kz: 'Той' },
   corporate:            { ru: 'Корпоратив', kz: 'Корпоратив' },
   prewedding:           { ru: 'Вечеринка перед свадьбой', kz: 'Үйлену тойы алдындағы кеш' },
   prom:                 { ru: 'Выпускной', kz: 'Бітіру кеші' },
@@ -39,12 +44,18 @@ export default function EventsList() {
     setLoading(true);
     setError('');
     try {
-      const res = await getWeddings();
-      let list = asArray(res);
+      // Оба источника независимы: если один упал, показываем второй.
+      const [wRes, cRes] = await Promise.allSettled([getWeddings(), getEventCategories()]);
+      const weddings = wRes.status === 'fulfilled' ? asArray(wRes.value).map((w) => ({ ...w, _src: 'wedding' })) : [];
+      const categories = cRes.status === 'fulfilled' ? asArray(cRes.value).map((c) => ({ ...c, _src: 'eventCategory' })) : [];
+      if (wRes.status === 'rejected' && cRes.status === 'rejected') throw wRes.reason;
+      let list = [...weddings, ...categories];
       if (user?.id != null) {
         const mine = list.filter((w) => w.host_id == null || w.host_id === user.id);
         list = mine.length ? mine : list;
       }
+      // Свежие сверху (у обоих источников дата в формате YYYY-MM-DD).
+      list.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
       setEvents(list);
     } catch (err) {
       setError(err.message || t('Не удалось загрузить', 'Жүктеу мүмкін болмады'));
@@ -58,12 +69,29 @@ export default function EventsList() {
     else if (ready) setLoading(false);
   }, [ready, isAuth, load]);
 
-  const onDelete = async (id) => {
+  // key = `${_src}-${id}`: id свадьбы и категории могут совпадать.
+  const onDelete = async (ev) => {
     if (!confirm(t('Удалить мероприятие?', 'Іс-шараны жою керек пе?'))) return;
-    setDelId(id);
+    const key = `${ev._src}-${ev.id}`;
+    setDelId(key);
     try {
-      await deleteWedding(id);
-      setEvents((e) => e.filter((x) => x.id !== id));
+      // Перед удалением освобождаем брони номеров/авто и даты ресторанов
+      // (как моб. Item3Screen при удалении категории). Best-effort.
+      try {
+        const isCat = ev._src === 'eventCategory';
+        const full = (await (isCat ? getEventCategory(ev.id) : getWedding(ev.id)));
+        const e = full?.data ?? full;
+        const rows = isCat
+          ? (e?.EventServices || []).map((s) => ({ type: ITEM_TYPE_BY_SERVICE_TYPE[s.serviceType] || s.serviceType, itemId: s.serviceId, room_ids: s.room_ids || [] }))
+          : (e?.WeddingItems || []).map((it) => ({ type: it.item_type, itemId: it.item_id, room_ids: it.room_ids || [] }));
+        await cancelBookingsForRows(rows, e?.date);
+        for (const r of rows) {
+          if (r.type === 'restaurant' && e?.date) { try { await unblockRestaurantDate(r.itemId, e.date); } catch { /* не критично */ } }
+        }
+      } catch { /* не критично */ }
+      if (ev._src === 'eventCategory') await deleteEventCategory(ev.id);
+      else await deleteWedding(ev.id);
+      setEvents((e) => e.filter((x) => !(x.id === ev.id && x._src === ev._src)));
     } catch (err) {
       alert(err.message || t('Не удалось удалить', 'Жою мүмкін болмады'));
     } finally {
@@ -140,8 +168,10 @@ export default function EventsList() {
           const kindLabel = e.event_kind && EVENT_KIND_LABELS[e.event_kind]
             ? (lang === 'ru' ? EVENT_KIND_LABELS[e.event_kind].ru : EVENT_KIND_LABELS[e.event_kind].kz)
             : null;
+          const rowKey = `${e._src}-${e.id}`;
+          const href = e._src === 'eventCategory' ? `/app/events/${e.id}?src=ec` : `/app/events/${e.id}`;
           return (
-            <motion.div layout key={e.id}
+            <motion.div layout key={rowKey}
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, x: -24, transition: { duration: 0.18 } }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
@@ -149,7 +179,7 @@ export default function EventsList() {
               style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--r-lg)', padding: 18, boxShadow: 'var(--shadow-sm)' }}>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                <Link href={`/app/events/${e.id}`} style={{ textDecoration: 'none', color: 'var(--ink)', flex: 1, minWidth: 0 }}>
+                <Link href={href} style={{ textDecoration: 'none', color: 'var(--ink)', flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontWeight: 800, fontSize: 18, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name || t('Без названия', 'Атаусыз')}</span>
                     <ChevronRight className="tl-ev-go" size={18} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
@@ -163,9 +193,9 @@ export default function EventsList() {
                     )}
                   </div>
                 </Link>
-                <button onClick={() => onDelete(e.id)} disabled={delId === e.id} aria-label={t('Удалить', 'Жою')}
+                <button onClick={() => onDelete(e)} disabled={delId === rowKey} aria-label={t('Удалить', 'Жою')}
                   style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, border: '1px solid var(--line)', background: 'var(--surface)', borderRadius: 'var(--r-sm)', color: 'var(--danger)', cursor: 'pointer' }}>
-                  {delId === e.id ? '…' : <Trash2 size={16} />}
+                  {delId === rowKey ? '…' : <Trash2 size={16} />}
                 </button>
               </div>
 

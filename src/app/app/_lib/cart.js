@@ -1,5 +1,6 @@
 // Расчёт корзины и сборка payload мероприятия из позиций корзины.
 import { getPrice } from './catalogFields';
+import { serviceTypeOf, EVENT_TYPE_BY_KEY } from './events';
 
 // slug каталога → строка типа услуги в items[] (как ждёт бэкенд weddings).
 export const SLUG_TYPE = {
@@ -20,6 +21,37 @@ export const lineCost = (slug, item, quantity, guests) => unitCost(item) * lineQ
 
 export function cartTotal(items, guests) {
   return items.reduce((s, c) => s + lineCost(c.slug, c.item, c.quantity, guests), 0);
+}
+
+// Тело POST /api/event-category из корзины (несвадебные типы).
+// Услуги сюда не входят — добавляются отдельно, см. buildCartCategoryServices.
+export function buildCartCategoryPayload({ name, date, budget, items, guests, typeKey }) {
+  const total = cartTotal(items, guests);
+  const b = parseFloat(budget) || 0;
+  return {
+    name: (name || '').trim(),
+    date,
+    budget: b,
+    total_cost: total,
+    paid_amount: 0,
+    remaining_balance: b - total,
+    guestCount: parseInt(guests, 10) || 0,
+    type: EVENT_TYPE_BY_KEY[typeKey]?.apiType || typeKey,
+  };
+}
+
+// Услуги для POST /api/event-category/{id}/service из позиций корзины.
+export function buildCartCategoryServices(items, guests) {
+  return items.map((c) => {
+    const q = lineQty(c.slug, c.quantity, guests);
+    return {
+      serviceId: c.item.id,
+      serviceType: serviceTypeOf(c.slug),
+      quantity: q,
+      cost: unitCost(c.item) * q,
+      room_ids: [],
+    };
+  });
 }
 
 // Payload для POST /api/weddings/addwedding из позиций корзины.

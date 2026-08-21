@@ -10,8 +10,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CATEGORY_BY_SLUG } from '../_lib/categories';
 import { CatIcon } from '../_lib/CatIcon';
 import { getName, getPrice, fmtMoney, trVal } from '../_lib/catalogFields';
-import { isGuestSlug, lineQty, unitCost, cartTotal, buildCartPayload } from '../_lib/cart';
-import { createWedding } from '../_lib/apiClient';
+import { isGuestSlug, lineQty, unitCost, cartTotal, buildCartPayload, buildCartCategoryPayload, buildCartCategoryServices } from '../_lib/cart';
+import { createWedding, createEventCategory, addServiceToCategory } from '../_lib/apiClient';
+import { EVENT_TYPES, EVENT_TYPE_BY_KEY } from '../_lib/events';
 
 const todayISO = () => new Date().toISOString().split('T')[0];
 
@@ -21,6 +22,7 @@ export default function CartPage() {
   const router = useRouter();
 
   const [name, setName] = useState('');
+  const [typeKey, setTypeKey] = useState('wedding');
   const [date, setDate] = useState(todayISO());
   const [budget, setBudget] = useState('');
   const [guests, setGuests] = useState('');
@@ -37,7 +39,18 @@ export default function CartPage() {
     if (items.length === 0) { setError(t('Корзина пуста', 'Себет бос')); return; }
     setBusy(true); setError('');
     try {
-      await createWedding(buildCartPayload({ name, date, hostId: user?.id, budget, items, guests }));
+      // Свадьба → weddings/addwedding; остальные типы → event-category + услуги
+      // по одной (тот же контракт, что и в мастере создания мероприятия).
+      if (EVENT_TYPE_BY_KEY[typeKey]?.storage === 'eventCategory') {
+        const res = await createEventCategory(buildCartCategoryPayload({ name, date, budget, items, guests, typeKey }));
+        const eventId = res?.id ?? res?.data?.id;
+        if (!eventId) throw new Error(t('Сервер не вернул id мероприятия', 'Сервер іс-шара id қайтармады'));
+        for (const svc of buildCartCategoryServices(items, guests)) {
+          await addServiceToCategory(eventId, svc);
+        }
+      } else {
+        await createWedding(buildCartPayload({ name, date, hostId: user?.id, budget, items, guests }));
+      }
       clear();
       router.push('/app/events');
     } catch (err) {
@@ -124,6 +137,14 @@ export default function CartPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, background: '#fff', border: '1px solid rgba(212,196,176,0.6)', borderRadius: 16, padding: 16 }}>
             <label style={col}><span style={lbl}>{t('Название', 'Атауы')} *</span>
               <input value={name} onChange={(e) => setName(e.target.value)} style={inp} /></label>
+            {/* Тип определяет, куда сохранится мероприятие: свадьба — в weddings,
+                остальные — в event-category (как в мобильном приложении). */}
+            <label style={col}><span style={lbl}>{t('Тип мероприятия', 'Іс-шара түрі')}</span>
+              <select value={typeKey} onChange={(e) => setTypeKey(e.target.value)} style={inp}>
+                {EVENT_TYPES.map((et) => (
+                  <option key={et.key} value={et.key}>{et.icon} {lang === 'kz' ? et.kz : et.ru}</option>
+                ))}
+              </select></label>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <label style={{ ...col, flex: '1 1 160px' }}><span style={lbl}>{t('Дата', 'Күні')}</span>
                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inp} /></label>

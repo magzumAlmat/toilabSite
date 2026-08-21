@@ -5,6 +5,8 @@
 import {
   checkRoomAvailability, checkVehicleAvailability,
   createRoomBooking, createTransportBooking, blockRestaurantDate,
+  fetchAllBlockedDays, getRoomBookings, getTransportBookings,
+  cancelRoomBooking, cancelTransportBooking,
 } from './apiClient';
 import { catalogItemName } from './events';
 
@@ -27,6 +29,32 @@ const vehicleRange = (date, days) => [date, addDaysISO(date, Math.max(0, (parseI
 export async function checkBookingConflicts(selected, dateISO, t) {
   const conflicts = [];
   const jobs = [];
+
+  // Ресторан на выбранную дату: моб. app проверяет blockedDays ДО создания и не
+  // даёт создать мероприятие на занятую дату (CorporateEventScreen.js:3073-3086).
+  // Без этого веб создавал мероприятие, а блокировка даты потом падала с 400
+  // («Этот день уже заблокирован»), причём молча.
+  const restaurants = selected.filter((s) => s.catKey === 'restaurants');
+  if (restaurants.length) {
+    jobs.push(
+      fetchAllBlockedDays()
+        .then((res) => {
+          const days = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : []);
+          for (const s of restaurants) {
+            const rid = s.item.companyId || s.item.id;
+            const busy = days.some(
+              (d) => String(d.restaurantId) === String(rid) && String(d.date).slice(0, 10) === dateISO,
+            );
+            if (busy) {
+              // Префикс «Занято на выбранную дату» добавляет вызывающая страница.
+              conflicts.push(`${t('Ресторан', 'Мейрамхана')} ${catalogItemName(s.item)}`);
+            }
+          }
+        })
+        .catch(() => {}), // проверка best-effort: сеть упала — не мешаем создавать
+    );
+  }
+
   for (const s of selected) {
     // Начало брони: выбранная в пикере дата (заезд/начало аренды) или дата мероприятия.
     const startISO = s.booking?.startDate || dateISO;
@@ -91,10 +119,53 @@ export async function createBookingsForWedding(selected, dateISO, weddingId) {
         }
       }
     }
-    // Блок даты ресторана (как addDataBlockToRestaurant в моб. app).
+    // Блок даты ресторана (как addDataBlockToRestaurant в моб. app). Сбой не
+    // откатывает мероприятие, но и не замалчивается — попадает в failures,
+    // чтобы пользователь знал, что дату нужно забронировать вручную.
     if (s.catKey === 'restaurants') {
-      try { await blockRestaurantDate(parentId, dateISO); } catch { /* не критично */ }
+      try {
+        await blockRestaurantDate(parentId, dateISO);
+      } catch {
+        failures.push(`${catalogItemName(s.item)} — ${dateISO}`);
+      }
     }
   }
   return failures;
+}
+
+// Отмена броней номеров/авто, связанных с услугами мероприятия — при удалении
+// мероприятия или услуги (порт моб. Item3Screen.js:2633-2657). Список броней
+// не хранит ссылку на мероприятие, поэтому матчим по дате + id номеров/авто из
+// room_ids услуг. rows: [{ type: 'hotel'|'transport'|..., room_ids: [] }].
+// Best-effort: сбои не мешают основному действию.
+const bookingsArr = (res) =>
+  (Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []);
+export async function cancelBookingsForRows(rows, dateISO) {
+  const ymd = String(dateISO || '').slice(0, 10);
+  if (!ymd) return;
+  const roomIds = new Set();
+  const vehicleIds = new Set();
+  for (const r of rows || []) {
+    const ids = (r.room_ids || []).map(Number).filter(Boolean);
+    if (r.type === 'hotel' || r.type === 'hotels') ids.forEach((x) => roomIds.add(x));
+    else if (r.type === 'transport') ids.forEach((x) => vehicleIds.add(x));
+  }
+  try {
+    if (roomIds.size) {
+      const arr = bookingsArr(await getRoomBookings(`date=${ymd}`));
+      for (const b of arr) {
+        if (roomIds.has(Number(b.roomId)) && b.bookingReference && b.status !== 'cancelled') {
+          try { await cancelRoomBooking(b.bookingReference); } catch { /* best-effort */ }
+        }
+      }
+    }
+    if (vehicleIds.size) {
+      const arr = bookingsArr(await getTransportBookings(`date=${ymd}`));
+      for (const b of arr) {
+        if (vehicleIds.has(Number(b.vehicleId)) && b.bookingReference && b.status !== 'cancelled') {
+          try { await cancelTransportBooking(b.bookingReference); } catch { /* best-effort */ }
+        }
+      }
+    }
+  } catch { /* best-effort */ }
 }

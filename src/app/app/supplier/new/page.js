@@ -176,7 +176,9 @@ export default function NewListing() {
 
       router.push('/app/supplier');
     } catch (err) {
-      setError(err.message || t('Не удалось создать', 'Жасау мүмкін болмады'));
+      const srv = err.response?.data;
+      const detail = srv?.error || srv?.message || srv?.details?.[0]?.message;
+      setError(detail || err.message || t('Не удалось создать', 'Жасау мүмкін болмады'));
     } finally {
       setBusy(false);
       setProgress('');
